@@ -1,19 +1,20 @@
-gamm4_result<-read_excel("D:\\SNU\\¿¬±¸\\KEI_È¯°æº¸°Ç°¨½ÃÃ¼°è\\ºĞ¼®\\´Ü±âÁúº´ºÎ´ã\\KEI_SNU_TS_analysis_OJM_20220330.xlsx",
-                         sheet="¼±Çü°á°ú(gamm4)")
+gamm4_result<-read_excel("D:\\SNU\\ì—°êµ¬\\KEI_í™˜ê²½ë³´ê±´ê°ì‹œì²´ê³„\\ë¶„ì„\\ë‹¨ê¸°ì§ˆë³‘ë¶€ë‹´\\KEI_SNU_TS_analysis_OJM_20220330.xlsx",
+                         sheet="ì„ í˜•ê²°ê³¼(gamm4)")
 
-setwd("D:\\SNU\\¿¬±¸\\KEI_È¯°æº¸°Ç°¨½ÃÃ¼°è\\ºĞ¼®\\´Ü±âÁúº´ºÎ´ã\\result\\µµ½Ãº°")
+setwd("D:\\SNU\\ì—°êµ¬\\KEI_í™˜ê²½ë³´ê±´ê°ì‹œì²´ê³„\\ë¶„ì„\\ë‹¨ê¸°ì§ˆë³‘ë¶€ë‹´\\result\\ë„ì‹œë³„")
 raw<-daily_death_final
 
-#È¯»ê½Ä (SO2/NO2,O3: ug/m3 ; CO: mg/m3)
+#í™˜ì‚°ì‹ (SO2/NO2,O3: ug/m3 ; CO: mg/m3)
 #ug/m3 -> ppb
 #mg/m3 -> ppm
-#ppm ±âÁØ³óµµ * 24.5/ºĞÀÚ·®
+#ppm ê¸°ì¤€ë†ë„ * 24.5/ë¶„ìëŸ‰
+#ì§ì ‘ ê³„ì‚°í•œ ë’¤ í™˜ì‚°ì‹ ê³„ì‚°í•´ì£¼ëŠ” í™ˆí˜ì´ì§€ì—ì„œ ê²°ê³¼ ë¹„êµ 
 so2_ref=40 *24.5/64.07/1000 
 no2_ref=25 *24.5/46.01/1000
 co_ref =4  *24.5/28.01/1000
 o3_ref =60 *24.5/48/1000
 
-#³ëÃâº¯È­·®
+#ë…¸ì¶œë³€í™”ëŸ‰
 raw$pm25_m0_diff=with(raw,ifelse(pm25_new   -15>0,pm25_new   -15,0))
 raw$pm25_m1_diff=with(raw,ifelse(pm25_new_m1-15>0,pm25_new_m1-15,0))
 raw$pm25_m2_diff=with(raw,ifelse(pm25_new_m2-15>0,pm25_new_m2-15,0))
@@ -71,30 +72,30 @@ raw$o3_m7_diff=with(raw,ifelse(o3_m7-o3_ref>0,o3_m7-o3_ref,0))
 
 gamm4_excess_func<-function(Y,X,expdiff,exposure,i,outcome){
   d<-raw
-  d$expdiff=expdiff  #delta exposure (³ëÃâ º¯È­·®)
-  d$exposue=exposure #³ëÃâº¯¼ö (´ë±â¿À¿°)
-  d$outcome=outcome  #°á°úº¯¼ö (»ç¸ÁÀÚ¼ö, ÀÔ¿øÀÚ¼ö)
+  d$expdiff=expdiff  #delta exposure (ë…¸ì¶œ ë³€í™”ëŸ‰)
+  d$exposue=exposure #ë…¸ì¶œë³€ìˆ˜ (ëŒ€ê¸°ì˜¤ì—¼)
+  d$outcome=outcome  #ê²°ê³¼ë³€ìˆ˜ (ì‚¬ë§ììˆ˜, ì…ì›ììˆ˜)
   
-  #±âÁØ³óµµ-ÃÖÀú³óµµ  (delta exposure)
+  #ê¸°ì¤€ë†ë„-ìµœì €ë†ë„  (delta exposure)
   d$expdiff2=with(d,exposure-0)
   
-  #¿ø½ÃÀÚ·á¿¡¼­ º¸°íÀÚÇÏ´Â ³ëÃâ½ÃÁ¡(lag01ÀÌ¸é lag01³ëÃâ¿¡ ´ëÇÑ)
-  #³ëÃâ °ª Á¸ÀçÇÏ´Â °æ¿ì¿¡ ´ëÇØ¼­¸¸ »êÃâ
-  #ÃßÁ¤ÇÑ RR °ª 
+  #ì›ì‹œìë£Œì—ì„œ ë³´ê³ ìí•˜ëŠ” ë…¸ì¶œì‹œì (lag01ì´ë©´ lag01ë…¸ì¶œì— ëŒ€í•œ)
+  #ë…¸ì¶œ ê°’ ì¡´ì¬í•˜ëŠ” ê²½ìš°ì— ëŒ€í•´ì„œë§Œ ì‚°ì¶œ
+  #ì¶”ì •í•œ RR ê°’ 
   ss<-subset(gamm4_result, outcome==Y & exposure==X)[i,]
   RR    <-ss$RR
   RR_lci<-ss$RR_lci
   RR_uci<-ss$RR_uci
   
   #Attributable risk % (RR-1)/RR  ;  1-1/RR
-  #AR% = (RR ??? 1) / RR x 100. AR% is also known as ¡°Attributable Fraction (Exposed)¡±
+  #AR% = (RR ??? 1) / RR x 100. AR% is also known as â€œAttributable Fraction (Exposed)â€
   
-  #½Ã³ª¸®¿À 1: ³óµµÂ÷ÀÌ(°í³óµµ¸¸ °ü½É)*°ü½ÉÁúÈ¯(»ç¸ÁÀÚ ¼ö)*Attributable risk
+  #ì‹œë‚˜ë¦¬ì˜¤ 1: ë†ë„ì°¨ì´(ê³ ë†ë„ë§Œ ê´€ì‹¬)*ê´€ì‹¬ì§ˆí™˜(ì‚¬ë§ì ìˆ˜)*Attributable risk
   d$e_dth    =with(d,1/ss$unit*expdiff*outcome*((RR-1)/RR))
   d$e_dth_lci=with(d,1/ss$unit*expdiff*outcome*((RR_lci-1)/RR_lci))
   d$e_dth_uci=with(d,1/ss$unit*expdiff*outcome*((RR_uci-1)/RR_uci))
   
-  #½Ã³ª¸®¿À 2: ³óµµÂ÷ÀÌ(¸ğµç ³óµµ°í·Á)*°ü½ÉÁúÈ¯(»ç¸ÁÀÚ ¼ö)*Attributable risk
+  #ì‹œë‚˜ë¦¬ì˜¤ 2: ë†ë„ì°¨ì´(ëª¨ë“  ë†ë„ê³ ë ¤)*ê´€ì‹¬ì§ˆí™˜(ì‚¬ë§ì ìˆ˜)*Attributable risk
   d$e_dth2    =with(d,1/ss$unit*expdiff2*outcome*((RR-1)/RR))
   d$e_dth_lci2=with(d,1/ss$unit*expdiff2*outcome*((RR_lci-1)/RR_lci))
   d$e_dth_uci2=with(d,1/ss$unit*expdiff2*outcome*((RR_uci-1)/RR_uci))
@@ -111,7 +112,7 @@ gamm4_excess_func<-function(Y,X,expdiff,exposure,i,outcome){
   d2 %>% select(outcome:lag,sido_KN,year:e_dth_uci2)
 }
 
-#ÀüÃ¼ »ç¸Á & ÃÊ¹Ì¼¼¸ÕÁö (by gamm4)
+#ì „ì²´ ì‚¬ë§ & ì´ˆë¯¸ì„¸ë¨¼ì§€ (by gamm4)
 tb0<-gamm4_excess_func("all_cause","PM25",raw$pm25_m0_diff,raw$pm25_new   ,1,raw$TOT)
 tb1<-gamm4_excess_func("all_cause","PM25",raw$pm25_m1_diff,raw$pm25_new_m1,2,raw$TOT)
 tb2<-gamm4_excess_func("all_cause","PM25",raw$pm25_m2_diff,raw$pm25_new_m2,3,raw$TOT)
@@ -122,7 +123,7 @@ tb6<-gamm4_excess_func("all_cause","PM25",raw$pm25_m6_diff,raw$pm25_new_m6,7,raw
 tb7<-gamm4_excess_func("all_cause","PM25",raw$pm25_m7_diff,raw$pm25_new_m7,8,raw$TOT)
 tb_pm25<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ »ç¸Á & ¹Ì¼¼¸ÕÁö (by gamm4)
+#ì „ì²´ ì‚¬ë§ & ë¯¸ì„¸ë¨¼ì§€ (by gamm4)
 tb0<-gamm4_excess_func("all_cause","PM10",raw$pm10_m0_diff,raw$pm10   ,1,raw$TOT)
 tb1<-gamm4_excess_func("all_cause","PM10",raw$pm10_m1_diff,raw$pm10_m1,2,raw$TOT)
 tb2<-gamm4_excess_func("all_cause","PM10",raw$pm10_m2_diff,raw$pm10_m2,3,raw$TOT)
@@ -133,7 +134,7 @@ tb6<-gamm4_excess_func("all_cause","PM10",raw$pm10_m6_diff,raw$pm10_m6,7,raw$TOT
 tb7<-gamm4_excess_func("all_cause","PM10",raw$pm10_m7_diff,raw$pm10_m7,8,raw$TOT)
 tb_pm10<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ »ç¸Á & ÀÌ»êÈ­È² (by gamm4)
+#ì „ì²´ ì‚¬ë§ & ì´ì‚°í™”í™© (by gamm4)
 tb0<-gamm4_excess_func("all_cause","SO2",raw$so2_m0_diff,raw$so2   ,1,raw$TOT)
 tb1<-gamm4_excess_func("all_cause","SO2",raw$so2_m1_diff,raw$so2_m1,2,raw$TOT)
 tb2<-gamm4_excess_func("all_cause","SO2",raw$so2_m2_diff,raw$so2_m2,3,raw$TOT)
@@ -144,7 +145,7 @@ tb6<-gamm4_excess_func("all_cause","SO2",raw$so2_m6_diff,raw$so2_m6,7,raw$TOT)
 tb7<-gamm4_excess_func("all_cause","SO2",raw$so2_m7_diff,raw$so2_m7,8,raw$TOT)
 tb_so2<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ »ç¸Á & ÀÌ»êÈ­Áú¼Ò (by gamm4)
+#ì „ì²´ ì‚¬ë§ & ì´ì‚°í™”ì§ˆì†Œ (by gamm4)
 tb0<-gamm4_excess_func("all_cause","NO2",raw$no2_m0_diff,raw$no2   ,1,raw$TOT)
 tb1<-gamm4_excess_func("all_cause","NO2",raw$no2_m1_diff,raw$no2_m1,2,raw$TOT)
 tb2<-gamm4_excess_func("all_cause","NO2",raw$no2_m2_diff,raw$no2_m2,3,raw$TOT)
@@ -155,7 +156,7 @@ tb6<-gamm4_excess_func("all_cause","NO2",raw$no2_m6_diff,raw$no2_m6,7,raw$TOT)
 tb7<-gamm4_excess_func("all_cause","NO2",raw$no2_m7_diff,raw$no2_m7,8,raw$TOT)
 tb_no2<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ »ç¸Á & ÀÏ»êÈ­Åº¼Ò (by gamm4)
+#ì „ì²´ ì‚¬ë§ & ì¼ì‚°í™”íƒ„ì†Œ (by gamm4)
 tb0<-gamm4_excess_func("all_cause","CO",raw$co_m0_diff,raw$co   ,1,raw$TOT)
 tb1<-gamm4_excess_func("all_cause","CO",raw$co_m1_diff,raw$co_m1,2,raw$TOT)
 tb2<-gamm4_excess_func("all_cause","CO",raw$co_m2_diff,raw$co_m2,3,raw$TOT)
@@ -166,7 +167,7 @@ tb6<-gamm4_excess_func("all_cause","CO",raw$co_m6_diff,raw$co_m6,7,raw$TOT)
 tb7<-gamm4_excess_func("all_cause","CO",raw$co_m7_diff,raw$co_m7,8,raw$TOT)
 tb_co<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ »ç¸Á & ¿ÀÁ¸ (by gamm4)
+#ì „ì²´ ì‚¬ë§ & ì˜¤ì¡´ (by gamm4)
 tb0<-gamm4_excess_func("all_cause","O3",raw$o3_m0_diff,raw$o3   ,1,raw$TOT)
 tb1<-gamm4_excess_func("all_cause","O3",raw$o3_m1_diff,raw$o3_m1,2,raw$TOT)
 tb2<-gamm4_excess_func("all_cause","O3",raw$o3_m2_diff,raw$o3_m2,3,raw$TOT)
@@ -182,7 +183,7 @@ write.csv(tb_tot_ap,file="gamm4_tot_AP.csv"  ,row.names=F,na="")
 #----------------------------------------------------------------------------------------#
 #----------------------------------------------------------------------------------------#
 
-#ÀüÃ¼ ºñ»ç°í»ç¸Á & ÃÊ¹Ì¼¼¸ÕÁö (by gamm4)
+#ì „ì²´ ë¹„ì‚¬ê³ ì‚¬ë§ & ì´ˆë¯¸ì„¸ë¨¼ì§€ (by gamm4)
 tb0<-gamm4_excess_func("nonacc","PM25",raw$pm25_m0_diff,raw$pm25_new   ,1,raw$NON_ACC)
 tb1<-gamm4_excess_func("nonacc","PM25",raw$pm25_m1_diff,raw$pm25_new_m1,2,raw$NON_ACC)
 tb2<-gamm4_excess_func("nonacc","PM25",raw$pm25_m2_diff,raw$pm25_new_m2,3,raw$NON_ACC)
@@ -193,7 +194,7 @@ tb6<-gamm4_excess_func("nonacc","PM25",raw$pm25_m6_diff,raw$pm25_new_m6,7,raw$NO
 tb7<-gamm4_excess_func("nonacc","PM25",raw$pm25_m7_diff,raw$pm25_new_m7,8,raw$NON_ACC)
 tb_pm25<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ ºñ»ç°í»ç¸Á & ¹Ì¼¼¸ÕÁö (by gamm4)
+#ì „ì²´ ë¹„ì‚¬ê³ ì‚¬ë§ & ë¯¸ì„¸ë¨¼ì§€ (by gamm4)
 tb0<-gamm4_excess_func("nonacc","PM10",raw$pm10_m0_diff,raw$pm10   ,1,raw$NON_ACC)
 tb1<-gamm4_excess_func("nonacc","PM10",raw$pm10_m1_diff,raw$pm10_m1,2,raw$NON_ACC)
 tb2<-gamm4_excess_func("nonacc","PM10",raw$pm10_m2_diff,raw$pm10_m2,3,raw$NON_ACC)
@@ -204,7 +205,7 @@ tb6<-gamm4_excess_func("nonacc","PM10",raw$pm10_m6_diff,raw$pm10_m6,7,raw$NON_AC
 tb7<-gamm4_excess_func("nonacc","PM10",raw$pm10_m7_diff,raw$pm10_m7,8,raw$NON_ACC)
 tb_pm10<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ ºñ»ç°í»ç¸Á & ÀÌ»êÈ­È² (by gamm4)
+#ì „ì²´ ë¹„ì‚¬ê³ ì‚¬ë§ & ì´ì‚°í™”í™© (by gamm4)
 tb0<-gamm4_excess_func("nonacc","SO2",raw$so2_m0_diff,raw$so2   ,1,raw$NON_ACC)
 tb1<-gamm4_excess_func("nonacc","SO2",raw$so2_m1_diff,raw$so2_m1,2,raw$NON_ACC)
 tb2<-gamm4_excess_func("nonacc","SO2",raw$so2_m2_diff,raw$so2_m2,3,raw$NON_ACC)
@@ -215,7 +216,7 @@ tb6<-gamm4_excess_func("nonacc","SO2",raw$so2_m6_diff,raw$so2_m6,7,raw$NON_ACC)
 tb7<-gamm4_excess_func("nonacc","SO2",raw$so2_m7_diff,raw$so2_m7,8,raw$NON_ACC)
 tb_so2<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ ºñ»ç°í»ç¸Á & ÀÌ»êÈ­Áú¼Ò (by gamm4)
+#ì „ì²´ ë¹„ì‚¬ê³ ì‚¬ë§ & ì´ì‚°í™”ì§ˆì†Œ (by gamm4)
 tb0<-gamm4_excess_func("nonacc","NO2",raw$no2_m0_diff,raw$no2   ,1,raw$NON_ACC)
 tb1<-gamm4_excess_func("nonacc","NO2",raw$no2_m1_diff,raw$no2_m1,2,raw$NON_ACC)
 tb2<-gamm4_excess_func("nonacc","NO2",raw$no2_m2_diff,raw$no2_m2,3,raw$NON_ACC)
@@ -226,7 +227,7 @@ tb6<-gamm4_excess_func("nonacc","NO2",raw$no2_m6_diff,raw$no2_m6,7,raw$NON_ACC)
 tb7<-gamm4_excess_func("nonacc","NO2",raw$no2_m7_diff,raw$no2_m7,8,raw$NON_ACC)
 tb_no2<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ ºñ»ç°í»ç¸Á & ÀÏ»êÈ­Åº¼Ò (by gamm4)
+#ì „ì²´ ë¹„ì‚¬ê³ ì‚¬ë§ & ì¼ì‚°í™”íƒ„ì†Œ (by gamm4)
 tb0<-gamm4_excess_func("nonacc","CO",raw$co_m0_diff,raw$co   ,1,raw$NON_ACC)
 tb1<-gamm4_excess_func("nonacc","CO",raw$co_m1_diff,raw$co_m1,2,raw$NON_ACC)
 tb2<-gamm4_excess_func("nonacc","CO",raw$co_m2_diff,raw$co_m2,3,raw$NON_ACC)
@@ -237,7 +238,7 @@ tb6<-gamm4_excess_func("nonacc","CO",raw$co_m6_diff,raw$co_m6,7,raw$NON_ACC)
 tb7<-gamm4_excess_func("nonacc","CO",raw$co_m7_diff,raw$co_m7,8,raw$NON_ACC)
 tb_co<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ ºñ»ç°í»ç¸Á & ¿ÀÁ¸ (by gamm4)
+#ì „ì²´ ë¹„ì‚¬ê³ ì‚¬ë§ & ì˜¤ì¡´ (by gamm4)
 tb0<-gamm4_excess_func("nonacc","O3",raw$o3_m0_diff,raw$o3   ,1,raw$NON_ACC)
 tb1<-gamm4_excess_func("nonacc","O3",raw$o3_m1_diff,raw$o3_m1,2,raw$NON_ACC)
 tb2<-gamm4_excess_func("nonacc","O3",raw$o3_m2_diff,raw$o3_m2,3,raw$NON_ACC)
@@ -254,7 +255,7 @@ write.csv(tb_nonacc_ap,file="gamm4_nonacc_AP.csv"  ,row.names=F,na="")
 #----------------------------------------------------------------------------------------#
 #----------------------------------------------------------------------------------------#
 
-#ÀüÃ¼ ½ÉÇ÷°ü»ç¸Á & ÃÊ¹Ì¼¼¸ÕÁö (by gamm4)
+#ì „ì²´ ì‹¬í˜ˆê´€ì‚¬ë§ & ì´ˆë¯¸ì„¸ë¨¼ì§€ (by gamm4)
 tb0<-gamm4_excess_func("cvd","PM25",raw$pm25_m0_diff,raw$pm25_new   ,1,raw$CVD)
 tb1<-gamm4_excess_func("cvd","PM25",raw$pm25_m1_diff,raw$pm25_new_m1,2,raw$CVD)
 tb2<-gamm4_excess_func("cvd","PM25",raw$pm25_m2_diff,raw$pm25_new_m2,3,raw$CVD)
@@ -265,7 +266,7 @@ tb6<-gamm4_excess_func("cvd","PM25",raw$pm25_m6_diff,raw$pm25_new_m6,7,raw$CVD)
 tb7<-gamm4_excess_func("cvd","PM25",raw$pm25_m7_diff,raw$pm25_new_m7,8,raw$CVD)
 tb_pm25<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ ½ÉÇ÷°ü»ç¸Á & ¹Ì¼¼¸ÕÁö (by gamm4)
+#ì „ì²´ ì‹¬í˜ˆê´€ì‚¬ë§ & ë¯¸ì„¸ë¨¼ì§€ (by gamm4)
 tb0<-gamm4_excess_func("cvd","PM10",raw$pm10_m0_diff,raw$pm10   ,1,raw$CVD)
 tb1<-gamm4_excess_func("cvd","PM10",raw$pm10_m1_diff,raw$pm10_m1,2,raw$CVD)
 tb2<-gamm4_excess_func("cvd","PM10",raw$pm10_m2_diff,raw$pm10_m2,3,raw$CVD)
@@ -276,7 +277,7 @@ tb6<-gamm4_excess_func("cvd","PM10",raw$pm10_m6_diff,raw$pm10_m6,7,raw$CVD)
 tb7<-gamm4_excess_func("cvd","PM10",raw$pm10_m7_diff,raw$pm10_m7,8,raw$CVD)
 tb_pm10<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ ½ÉÇ÷°ü»ç¸Á & ÀÌ»êÈ­È² (by gamm4)
+#ì „ì²´ ì‹¬í˜ˆê´€ì‚¬ë§ & ì´ì‚°í™”í™© (by gamm4)
 tb0<-gamm4_excess_func("cvd","SO2",raw$so2_m0_diff,raw$so2   ,1,raw$CVD)
 tb1<-gamm4_excess_func("cvd","SO2",raw$so2_m1_diff,raw$so2_m1,2,raw$CVD)
 tb2<-gamm4_excess_func("cvd","SO2",raw$so2_m2_diff,raw$so2_m2,3,raw$CVD)
@@ -287,7 +288,7 @@ tb6<-gamm4_excess_func("cvd","SO2",raw$so2_m6_diff,raw$so2_m6,7,raw$CVD)
 tb7<-gamm4_excess_func("cvd","SO2",raw$so2_m7_diff,raw$so2_m7,8,raw$CVD)
 tb_so2<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ ½ÉÇ÷°ü»ç¸Á & ÀÌ»êÈ­Áú¼Ò (by gamm4)
+#ì „ì²´ ì‹¬í˜ˆê´€ì‚¬ë§ & ì´ì‚°í™”ì§ˆì†Œ (by gamm4)
 tb0<-gamm4_excess_func("cvd","NO2",raw$no2_m0_diff,raw$no2   ,1,raw$CVD)
 tb1<-gamm4_excess_func("cvd","NO2",raw$no2_m1_diff,raw$no2_m1,2,raw$CVD)
 tb2<-gamm4_excess_func("cvd","NO2",raw$no2_m2_diff,raw$no2_m2,3,raw$CVD)
@@ -298,7 +299,7 @@ tb6<-gamm4_excess_func("cvd","NO2",raw$no2_m6_diff,raw$no2_m6,7,raw$CVD)
 tb7<-gamm4_excess_func("cvd","NO2",raw$no2_m7_diff,raw$no2_m7,8,raw$CVD)
 tb_no2<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ ½ÉÇ÷°ü»ç¸Á & ÀÏ»êÈ­Åº¼Ò (by gamm4)
+#ì „ì²´ ì‹¬í˜ˆê´€ì‚¬ë§ & ì¼ì‚°í™”íƒ„ì†Œ (by gamm4)
 tb0<-gamm4_excess_func("cvd","CO",raw$co_m0_diff,raw$co   ,1,raw$CVD)
 tb1<-gamm4_excess_func("cvd","CO",raw$co_m1_diff,raw$co_m1,2,raw$CVD)
 tb2<-gamm4_excess_func("cvd","CO",raw$co_m2_diff,raw$co_m2,3,raw$CVD)
@@ -309,7 +310,7 @@ tb6<-gamm4_excess_func("cvd","CO",raw$co_m6_diff,raw$co_m6,7,raw$CVD)
 tb7<-gamm4_excess_func("cvd","CO",raw$co_m7_diff,raw$co_m7,8,raw$CVD)
 tb_co<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ ½ÉÇ÷°ü»ç¸Á & ¿ÀÁ¸ (by gamm4)
+#ì „ì²´ ì‹¬í˜ˆê´€ì‚¬ë§ & ì˜¤ì¡´ (by gamm4)
 tb0<-gamm4_excess_func("cvd","O3",raw$o3_m0_diff,raw$o3   ,1,raw$CVD)
 tb1<-gamm4_excess_func("cvd","O3",raw$o3_m1_diff,raw$o3_m1,2,raw$CVD)
 tb2<-gamm4_excess_func("cvd","O3",raw$o3_m2_diff,raw$o3_m2,3,raw$CVD)
@@ -326,7 +327,7 @@ write.csv(tb_cvd_ap,file="gamm4_cvd_AP.csv"  ,row.names=F,na="")
 #----------------------------------------------------------------------------------------#
 #----------------------------------------------------------------------------------------#
 
-#ÀüÃ¼ È£Èí±â»ç¸Á & ÃÊ¹Ì¼¼¸ÕÁö (by gamm4)
+#ì „ì²´ í˜¸í¡ê¸°ì‚¬ë§ & ì´ˆë¯¸ì„¸ë¨¼ì§€ (by gamm4)
 tb0<-gamm4_excess_func("respiratory","PM25",raw$pm25_m0_diff,raw$pm25_new   ,1,raw$RESP)
 tb1<-gamm4_excess_func("respiratory","PM25",raw$pm25_m1_diff,raw$pm25_new_m1,2,raw$RESP)
 tb2<-gamm4_excess_func("respiratory","PM25",raw$pm25_m2_diff,raw$pm25_new_m2,3,raw$RESP)
@@ -337,7 +338,7 @@ tb6<-gamm4_excess_func("respiratory","PM25",raw$pm25_m6_diff,raw$pm25_new_m6,7,r
 tb7<-gamm4_excess_func("respiratory","PM25",raw$pm25_m7_diff,raw$pm25_new_m7,8,raw$RESP)
 tb_pm25<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ È£Èí±â»ç¸Á & ¹Ì¼¼¸ÕÁö (by gamm4)
+#ì „ì²´ í˜¸í¡ê¸°ì‚¬ë§ & ë¯¸ì„¸ë¨¼ì§€ (by gamm4)
 tb0<-gamm4_excess_func("respiratory","PM10",raw$pm10_m0_diff,raw$pm10   ,1,raw$RESP)
 tb1<-gamm4_excess_func("respiratory","PM10",raw$pm10_m1_diff,raw$pm10_m1,2,raw$RESP)
 tb2<-gamm4_excess_func("respiratory","PM10",raw$pm10_m2_diff,raw$pm10_m2,3,raw$RESP)
@@ -348,7 +349,7 @@ tb6<-gamm4_excess_func("respiratory","PM10",raw$pm10_m6_diff,raw$pm10_m6,7,raw$R
 tb7<-gamm4_excess_func("respiratory","PM10",raw$pm10_m7_diff,raw$pm10_m7,8,raw$RESP)
 tb_pm10<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ È£Èí±â»ç¸Á & ÀÌ»êÈ­È² (by gamm4)
+#ì „ì²´ í˜¸í¡ê¸°ì‚¬ë§ & ì´ì‚°í™”í™© (by gamm4)
 tb0<-gamm4_excess_func("respiratory","SO2",raw$so2_m0_diff,raw$so2   ,1,raw$RESP)
 tb1<-gamm4_excess_func("respiratory","SO2",raw$so2_m1_diff,raw$so2_m1,2,raw$RESP)
 tb2<-gamm4_excess_func("respiratory","SO2",raw$so2_m2_diff,raw$so2_m2,3,raw$RESP)
@@ -359,7 +360,7 @@ tb6<-gamm4_excess_func("respiratory","SO2",raw$so2_m6_diff,raw$so2_m6,7,raw$RESP
 tb7<-gamm4_excess_func("respiratory","SO2",raw$so2_m7_diff,raw$so2_m7,8,raw$RESP)
 tb_so2<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ È£Èí±â»ç¸Á & ÀÌ»êÈ­Áú¼Ò (by gamm4)
+#ì „ì²´ í˜¸í¡ê¸°ì‚¬ë§ & ì´ì‚°í™”ì§ˆì†Œ (by gamm4)
 tb0<-gamm4_excess_func("respiratory","NO2",raw$no2_m0_diff,raw$no2   ,1,raw$RESP)
 tb1<-gamm4_excess_func("respiratory","NO2",raw$no2_m1_diff,raw$no2_m1,2,raw$RESP)
 tb2<-gamm4_excess_func("respiratory","NO2",raw$no2_m2_diff,raw$no2_m2,3,raw$RESP)
@@ -370,7 +371,7 @@ tb6<-gamm4_excess_func("respiratory","NO2",raw$no2_m6_diff,raw$no2_m6,7,raw$RESP
 tb7<-gamm4_excess_func("respiratory","NO2",raw$no2_m7_diff,raw$no2_m7,8,raw$RESP)
 tb_no2<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ È£Èí±â»ç¸Á & ÀÏ»êÈ­Åº¼Ò (by gamm4)
+#ì „ì²´ í˜¸í¡ê¸°ì‚¬ë§ & ì¼ì‚°í™”íƒ„ì†Œ (by gamm4)
 tb0<-gamm4_excess_func("respiratory","CO",raw$co_m0_diff,raw$co   ,1,raw$RESP)
 tb1<-gamm4_excess_func("respiratory","CO",raw$co_m1_diff,raw$co_m1,2,raw$RESP)
 tb2<-gamm4_excess_func("respiratory","CO",raw$co_m2_diff,raw$co_m2,3,raw$RESP)
@@ -381,7 +382,7 @@ tb6<-gamm4_excess_func("respiratory","CO",raw$co_m6_diff,raw$co_m6,7,raw$RESP)
 tb7<-gamm4_excess_func("respiratory","CO",raw$co_m7_diff,raw$co_m7,8,raw$RESP)
 tb_co<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
-#ÀüÃ¼ È£Èí±â»ç¸Á & ¿ÀÁ¸ (by gamm4)
+#ì „ì²´ í˜¸í¡ê¸°ì‚¬ë§ & ì˜¤ì¡´ (by gamm4)
 tb0<-gamm4_excess_func("respiratory","O3",raw$o3_m0_diff,raw$o3   ,1,raw$RESP)
 tb1<-gamm4_excess_func("respiratory","O3",raw$o3_m1_diff,raw$o3_m1,2,raw$RESP)
 tb2<-gamm4_excess_func("respiratory","O3",raw$o3_m2_diff,raw$o3_m2,3,raw$RESP)
