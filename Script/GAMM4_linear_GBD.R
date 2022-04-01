@@ -1,7 +1,20 @@
+pacman::p_load(gamm4,mgcv,lme4,splines,ggplot2,gridExtra,dplyr,lubridate,scales,
+               RColorBrewer)
+
+#사망 정리자료 
+setwd("D:\\SNU\\연구\\KEI_환경보건감시체계\\분석\\단기질병부담")
+daily_death_final<-read.csv("daily_death_final.csv")
+
+daily_death_final$ddate=ymd(daily_death_final$ddate)
+daily_death_final$sido_KN =with(daily_death_final,factor(sido_KN,levels=unique(sido_KN)))
+daily_death_final$sidoname=with(daily_death_final,factor(sidoname,levels=unique(sidoname)))
+
+#선형가정 추정한 모델 결과 
 gamm4_result<-read_excel("D:\\SNU\\연구\\KEI_환경보건감시체계\\분석\\단기질병부담\\KEI_SNU_TS_analysis_OJM_20220330.xlsx",
                          sheet="선형결과(gamm4)")
 
 setwd("D:\\SNU\\연구\\KEI_환경보건감시체계\\분석\\단기질병부담\\result\\도시별")
+
 raw<-daily_death_final
 
 #환산식 (SO2/NO2,O3: ug/m3 ; CO: mg/m3)
