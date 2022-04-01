@@ -9,10 +9,10 @@ raw<-daily_death_final
 #mg/m3 -> ppm
 #ppm 기준농도 * 24.5/분자량
 #직접 계산한 뒤 환산식 계산해주는 홈페이지에서 결과 비교 
-so2_ref=40 *24.5/64.07/1000 
-no2_ref=25 *24.5/46.01/1000
-co_ref =4  *24.5/28.01/1000
-o3_ref =60 *24.5/48/1000
+so2_ref=40 *24.5/64.07/1000 #ppm
+no2_ref=25 *24.5/46.01/1000 #ppm
+co_ref =3.492               #ppm
+o3_ref =60 *24.5/48/1000    #ppm
 
 #노출변화량
 raw$pm25_m0_diff=with(raw,ifelse(pm25_new   -15>0,pm25_new   -15,0))
