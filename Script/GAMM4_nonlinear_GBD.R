@@ -1,16 +1,16 @@
 #-------------------------------------------------------------#
-#¶óÀÌºê·¯¸®
+#ë¼ì´ë¸ŒëŸ¬ë¦¬
 pacman::p_load(gamm4,mgcv,lme4,splines,ggplot2,gridExtra,dplyr,lubridate,scales,RColorBrewer)
 
 #-------------------------------------------------------------#
-setwd("D:\\SNU\\¿¬±¸\\KEI_È¯°æº¸°Ç°¨½ÃÃ¼°è\\ºĞ¼®\\´Ü±âÁúº´ºÎ´ã")
+setwd("D:\\SNU\\ì—°êµ¬\\KEI_í™˜ê²½ë³´ê±´ê°ì‹œì²´ê³„\\ë¶„ì„\\ë‹¨ê¸°ì§ˆë³‘ë¶€ë‹´")
 daily_death_final<-read.csv("daily_death_final.csv")
 
 daily_death_final$ddate=ymd(daily_death_final$ddate)
 daily_death_final$sido_KN =with(daily_death_final,factor(sido_KN,levels=unique(sido_KN)))
 daily_death_final$sidoname=with(daily_death_final,factor(sidoname,levels=unique(sidoname)))
 
-#¿ø½ÃÀÚ·á º¯¼ö ÆíÁı, ¸ğµ¨¸µ¿¡ »ç¿ëÇÑ º¯¼ö À§ÁÖ
+#ì›ì‹œìë£Œ ë³€ìˆ˜ í¸ì§‘, ëª¨ë¸ë§ì— ì‚¬ìš©í•œ ë³€ìˆ˜ ìœ„ì£¼
 raw<-daily_death_final %>% select(key:TOT,NON_ACC,CVD,RESP,
                                   sn:dowfirstday,
                                   meantemp,meantemp_m1:meantemp_m7,
@@ -26,37 +26,37 @@ raw<-daily_death_final %>% select(key:TOT,NON_ACC,CVD,RESP,
 
 #-------------------------------------------------------------#
 #-------------------------------------------------------------#
-#ºñ¼±Çü °¡Á¤, ¸ğµ¨¸µ °á°ú ºÒ·¯¿À±â ; by gamm4
+#ë¹„ì„ í˜• ê°€ì •, ëª¨ë¸ë§ ê²°ê³¼ ë¶ˆëŸ¬ì˜¤ê¸° ; by gamm4
 
-#ÀÚ·á ÀúÀå µğ·ºÅä¸® 
-dir1="D:\\SNU\\¿¬±¸\\KEI_È¯°æº¸°Ç°¨½ÃÃ¼°è\\ºĞ¼®\\´Ü±âÁúº´ºÎ´ã\\gamm4\\all_cause"
-dir2="D:\\SNU\\¿¬±¸\\KEI_È¯°æº¸°Ç°¨½ÃÃ¼°è\\ºĞ¼®\\´Ü±âÁúº´ºÎ´ã\\gamm4\\nonacc"
-dir3="D:\\SNU\\¿¬±¸\\KEI_È¯°æº¸°Ç°¨½ÃÃ¼°è\\ºĞ¼®\\´Ü±âÁúº´ºÎ´ã\\gamm4\\cvd"
-dir4="D:\\SNU\\¿¬±¸\\KEI_È¯°æº¸°Ç°¨½ÃÃ¼°è\\ºĞ¼®\\´Ü±âÁúº´ºÎ´ã\\gamm4\\respiratory"
+#ìë£Œ ì €ì¥ ë””ë ‰í† ë¦¬ 
+dir1="D:\\SNU\\ì—°êµ¬\\KEI_í™˜ê²½ë³´ê±´ê°ì‹œì²´ê³„\\ë¶„ì„\\ë‹¨ê¸°ì§ˆë³‘ë¶€ë‹´\\gamm4\\all_cause"
+dir2="D:\\SNU\\ì—°êµ¬\\KEI_í™˜ê²½ë³´ê±´ê°ì‹œì²´ê³„\\ë¶„ì„\\ë‹¨ê¸°ì§ˆë³‘ë¶€ë‹´\\gamm4\\nonacc"
+dir3="D:\\SNU\\ì—°êµ¬\\KEI_í™˜ê²½ë³´ê±´ê°ì‹œì²´ê³„\\ë¶„ì„\\ë‹¨ê¸°ì§ˆë³‘ë¶€ë‹´\\gamm4\\cvd"
+dir4="D:\\SNU\\ì—°êµ¬\\KEI_í™˜ê²½ë³´ê±´ê°ì‹œì²´ê³„\\ë¶„ì„\\ë‹¨ê¸°ì§ˆë³‘ë¶€ë‹´\\gamm4\\respiratory"
 
 dir=c(dir1,dir2,dir3,dir4)
 
-#³ëÃâ º¯¼ö
+#ë…¸ì¶œ ë³€ìˆ˜
 exposure=c("pm25","pm10","so2","no2","co","o3")
 
-#»ç¸Á º¯¼ö
+#ì‚¬ë§ ë³€ìˆ˜
 dth=c("TOT","NON_ACC","CVD","RESP")
 
-#ÆÄÀÏ ³ëÃâº°*»ç¸Á¿øÀÎº° Á¶ÇÕÀ¸·Î ÇÔ¼ö Ãâ·ÂÇÒ ¼ö ÀÖµµ·ÏÇÏ±â 
+#íŒŒì¼ ë…¸ì¶œë³„*ì‚¬ë§ì›ì¸ë³„ ì¡°í•©ìœ¼ë¡œ í•¨ìˆ˜ ì¶œë ¥í•  ìˆ˜ ìˆë„ë¡í•˜ê¸° 
 # 4 * 6
 
 index_list<-paste0(rep(c(1:4),each=6),1:6)
 
-#ÃÖÁ¾°á°ú ÀúÀåÇÒ ¸®½ºÆ®
-#(1) ÃÊ°ú»ç¸Á °á°ú ÀúÀå 
-#(2) ³ëÃâ¹İÀÀ °á°ú ÀúÀå 
+#ìµœì¢…ê²°ê³¼ ì €ì¥í•  ë¦¬ìŠ¤íŠ¸
+#(1) ì´ˆê³¼ì‚¬ë§ ê²°ê³¼ ì €ì¥ 
+#(2) ë…¸ì¶œë°˜ì‘ ê²°ê³¼ ì €ì¥ 
 
 #-------------------------------------------------------------------------------#
-#¿©±â¼­ ¾Æ¸¶ ´Ù¸¥ ´ë±â¿À¿° (SO2~O3)¿¡ ´ëÇÑ ´ÜÀ§ Á¶Á¤ ÇØ¾ßÇÒµí 
-#³ëÃâ ³óµµ Á© ³ôÀº ¼öÁØ±îÁö ¸¸µé¾î ³õ±â
-#´çÀÏ ³ëÃâÀÌ ÀÌµ¿Æò±Õ ³óµµº¸´Ù ³ôÀ»Å×´Ï ÃÖ´ë ¹üÀ§±îÁö °í·ÁÇØ¼­
-#¿¹Ãø°ª ¸¸µé¾î ÁÖ°í ¿ø·¡ÀÚ·á¿¡ ÇØ´çµÇ´Â ³óµµ ¹üÀ§³»¿¡¼­¸¸ ÀÚ·á merge
-#ÁÖÀÇ) SO2, NO2, CO, O3´Â ¸ğµ¨¸µ½Ã ppm ´ÜÀ§·Î ¿¹Ãø ÇßÀ½ (´ÜÀ§º¯È¯ °í·ÁÇÏ±â!!)
+#ì—¬ê¸°ì„œ ì•„ë§ˆ ë‹¤ë¥¸ ëŒ€ê¸°ì˜¤ì—¼ (SO2~O3)ì— ëŒ€í•œ ë‹¨ìœ„ ì¡°ì • í•´ì•¼í• ë“¯ 
+#ë…¸ì¶œ ë†ë„ ì ¤ ë†’ì€ ìˆ˜ì¤€ê¹Œì§€ ë§Œë“¤ì–´ ë†“ê¸°
+#ë‹¹ì¼ ë…¸ì¶œì´ ì´ë™í‰ê·  ë†ë„ë³´ë‹¤ ë†’ì„í…Œë‹ˆ ìµœëŒ€ ë²”ìœ„ê¹Œì§€ ê³ ë ¤í•´ì„œ
+#ì˜ˆì¸¡ê°’ ë§Œë“¤ì–´ ì£¼ê³  ì›ë˜ìë£Œì— í•´ë‹¹ë˜ëŠ” ë†ë„ ë²”ìœ„ë‚´ì—ì„œë§Œ ìë£Œ merge
+#ì£¼ì˜) SO2, NO2, CO, O3ëŠ” ëª¨ë¸ë§ì‹œ ppm ë‹¨ìœ„ë¡œ ì˜ˆì¸¡ í–ˆìŒ (ë‹¨ìœ„ë³€í™˜ ê³ ë ¤í•˜ê¸°!!)
 
 #-------------------------------------------------------------------------------#
 pred_data_pm25<-pred_data_func(max(raw$pm25_new,na.rm=T))
@@ -66,7 +66,7 @@ pred_data_no2 <-pred_data_func(max(raw$no2,na.rm=T)*1000)
 pred_data_co  <-pred_data_func(max(raw$co,na.rm=T)*1000)
 pred_data_o3  <-pred_data_func(max(raw$o3,na.rm=T)*1000)
 
-#PM2.5 ³ëÃâ ÃÖ´ë°ª±îÁö ¹İ¿µ
+#PM2.5 ë…¸ì¶œ ìµœëŒ€ê°’ê¹Œì§€ ë°˜ì˜
 pred_data_pm25$pm25_new   =seq(max(raw$pm25_new,na.rm=T))
 pred_data_pm25$pm25_new_m1=seq(max(raw$pm25_new,na.rm=T))
 pred_data_pm25$pm25_new_m2=seq(max(raw$pm25_new,na.rm=T))
@@ -76,7 +76,7 @@ pred_data_pm25$pm25_new_m5=seq(max(raw$pm25_new,na.rm=T))
 pred_data_pm25$pm25_new_m6=seq(max(raw$pm25_new,na.rm=T))
 pred_data_pm25$pm25_new_m7=seq(max(raw$pm25_new,na.rm=T))
 
-#PM10 ³ëÃâ ÃÖ´ë°ª±îÁö ¹İ¿µ
+#PM10 ë…¸ì¶œ ìµœëŒ€ê°’ê¹Œì§€ ë°˜ì˜
 pred_data_pm10$pm10   =seq(max(raw$pm10,na.rm=T))
 pred_data_pm10$pm10_m1=seq(max(raw$pm10,na.rm=T))
 pred_data_pm10$pm10_m2=seq(max(raw$pm10,na.rm=T))
@@ -86,7 +86,7 @@ pred_data_pm10$pm10_m5=seq(max(raw$pm10,na.rm=T))
 pred_data_pm10$pm10_m6=seq(max(raw$pm10,na.rm=T))
 pred_data_pm10$pm10_m7=seq(max(raw$pm10,na.rm=T))
 
-#SO2 ³ëÃâ ÃÖ´ë°ª±îÁö ¹İ¿µ
+#SO2 ë…¸ì¶œ ìµœëŒ€ê°’ê¹Œì§€ ë°˜ì˜
 pred_data_so2$so2   =seq(max(raw$so2,na.rm=T)*1000)/1000
 pred_data_so2$so2_m1=seq(max(raw$so2,na.rm=T)*1000)/1000
 pred_data_so2$so2_m2=seq(max(raw$so2,na.rm=T)*1000)/1000
@@ -96,7 +96,7 @@ pred_data_so2$so2_m5=seq(max(raw$so2,na.rm=T)*1000)/1000
 pred_data_so2$so2_m6=seq(max(raw$so2,na.rm=T)*1000)/1000
 pred_data_so2$so2_m7=seq(max(raw$so2,na.rm=T)*1000)/1000
 
-#NO2 ³ëÃâ ÃÖ´ë°ª±îÁö ¹İ¿µ
+#NO2 ë…¸ì¶œ ìµœëŒ€ê°’ê¹Œì§€ ë°˜ì˜
 pred_data_no2$no2   =seq(max(raw$no2,na.rm=T)*1000)/1000
 pred_data_no2$no2_m1=seq(max(raw$no2,na.rm=T)*1000)/1000
 pred_data_no2$no2_m2=seq(max(raw$no2,na.rm=T)*1000)/1000
@@ -106,7 +106,7 @@ pred_data_no2$no2_m5=seq(max(raw$no2,na.rm=T)*1000)/1000
 pred_data_no2$no2_m6=seq(max(raw$no2,na.rm=T)*1000)/1000
 pred_data_no2$no2_m7=seq(max(raw$no2,na.rm=T)*1000)/1000
 
-#CO ³ëÃâ ÃÖ´ë°ª±îÁö ¹İ¿µ
+#CO ë…¸ì¶œ ìµœëŒ€ê°’ê¹Œì§€ ë°˜ì˜
 pred_data_co$co   =seq(max(raw$co,na.rm=T)*1000)/1000
 pred_data_co$co_m1=seq(max(raw$co,na.rm=T)*1000)/1000
 pred_data_co$co_m2=seq(max(raw$co,na.rm=T)*1000)/1000
@@ -116,7 +116,7 @@ pred_data_co$co_m5=seq(max(raw$co,na.rm=T)*1000)/1000
 pred_data_co$co_m6=seq(max(raw$co,na.rm=T)*1000)/1000
 pred_data_co$co_m7=seq(max(raw$co,na.rm=T)*1000)/1000
 
-#O3 ³ëÃâ ÃÖ´ë°ª±îÁö ¹İ¿µ
+#O3 ë…¸ì¶œ ìµœëŒ€ê°’ê¹Œì§€ ë°˜ì˜
 pred_data_o3$o3   =seq(max(raw$o3,na.rm=T)*1000)/1000
 pred_data_o3$o3_m1=seq(max(raw$o3,na.rm=T)*1000)/1000
 pred_data_o3$o3_m2=seq(max(raw$o3,na.rm=T)*1000)/1000
@@ -126,7 +126,7 @@ pred_data_o3$o3_m5=seq(max(raw$o3,na.rm=T)*1000)/1000
 pred_data_o3$o3_m6=seq(max(raw$o3,na.rm=T)*1000)/1000
 pred_data_o3$o3_m7=seq(max(raw$o3,na.rm=T)*1000)/1000
 
-#³óµµ ±¸°£º°·Î ¿¹ÃøÇÒ ÀÚ·á¸¦ ¸®½ºÆ®È­ ½ÃÅ°±â 
+#ë†ë„ êµ¬ê°„ë³„ë¡œ ì˜ˆì¸¡í•  ìë£Œë¥¼ ë¦¬ìŠ¤íŠ¸í™” ì‹œí‚¤ê¸° 
 pred_data_list=NULL
 pred_data_list[[1]]<-pred_data_pm25
 pred_data_list[[2]]<-pred_data_pm10
@@ -137,20 +137,20 @@ pred_data_list[[6]]<-pred_data_o3
 
 #-------------------------------------------------------------------------------#
 #-------------------------------------------------------------------------------#
-result=NULL
+
 gamm4_nonlinear_excess_mor<-function(index,unit){
+  result=NULL  
+  m=as.numeric(substr(index,1,1)) #mortalityì— ëŒ€í•œ ë¶€ë¶„
+  e=as.numeric(substr(index,2,2)) #exposureì— ëŒ€í•œ ë¶€ë¶„ 
   
-  m=as.numeric(substr(index,1,1)) #mortality¿¡ ´ëÇÑ ºÎºĞ
-  e=as.numeric(substr(index,2,2)) #exposure¿¡ ´ëÇÑ ºÎºĞ 
-  
-  #ÇöÀç À§Ä¡ ÆÄÀÏ ¸®½ºÆ®
+  #í˜„ì¬ ìœ„ì¹˜ íŒŒì¼ ë¦¬ìŠ¤íŠ¸
   setwd(dir[m])
   lf<-list.files()
-  lf[grep(exposure[e],lf)] #³ëÃâ ¹°Áúº° lag0~lag07 °á°ú 
+  lf[grep(exposure[e],lf)] #ë…¸ì¶œ ë¬¼ì§ˆë³„ lag0~lag07 ê²°ê³¼ 
   
-  #GAMM4 ºñ¼±ÇüÀ¸·Î ¸ğµ¨¸µÇÑ °á°ú ºÒ·¯¿À±â 
-  #ºñ¼±ÇüÀ» °¡Á¤À¸·Î health impact »êÃâ
-  #°¢ ³ëÃâ lagº°·Î Prediction
+  #GAMM4 ë¹„ì„ í˜•ìœ¼ë¡œ ëª¨ë¸ë§í•œ ê²°ê³¼ ë¶ˆëŸ¬ì˜¤ê¸° 
+  #ë¹„ì„ í˜•ì„ ê°€ì •ìœ¼ë¡œ health impact ì‚°ì¶œ
+  #ê° ë…¸ì¶œ lagë³„ë¡œ Prediction
   
   gamm4_m0<-readRDS(lf[grep(exposure[e],lf)][1])
   pred0 <- predict(gamm4_m0$gam, newdata=pred_data_list[[e]], type = "terms", se.fit = TRUE);rm(gamm4_m0)
@@ -176,8 +176,8 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   gamm4_m7<-readRDS(lf[grep(exposure[e],lf)][8])
   pred7 <- predict(gamm4_m7$gam, newdata=pred_data_list[[e]], type = "terms", se.fit = TRUE);rm(gamm4_m7)
   
-  #spline term¿¡ ÀÖ´Â (Áï, ºñ¼±ÇüÀ¸·Î ÃßÁ¤ÇÑ ³ëÃâ)¿¡ ÇØ´çÇÏ´Â ÃßÁ¤°ª ¹İÈ¯ 
-  #Àû¿ëÀü¿¡ µÎ¹øÂ° È¸±Í°è¼ö°¡ ³ëÃâ¿¡ ´ëÇÑ °ÍÀÎÁö °ËÅäÇÏ±â!!
+  #spline termì— ìˆëŠ” (ì¦‰, ë¹„ì„ í˜•ìœ¼ë¡œ ì¶”ì •í•œ ë…¸ì¶œ)ì— í•´ë‹¹í•˜ëŠ” ì¶”ì •ê°’ ë°˜í™˜ 
+  #ì ìš©ì „ì— ë‘ë²ˆì§¸ íšŒê·€ê³„ìˆ˜ê°€ ë…¸ì¶œì— ëŒ€í•œ ê²ƒì¸ì§€ ê²€í† í•˜ê¸°!!
   beta0<-as.data.frame(cbind(beta=pred0$fit[,2],beta_lci=pred0$fit[,2]-1.96*pred0$se.fit[,2],beta_uci=pred0$fit[,2]+1.96*pred0$se.fit[,2]))
   beta1<-as.data.frame(cbind(beta=pred1$fit[,2],beta_lci=pred1$fit[,2]-1.96*pred1$se.fit[,2],beta_uci=pred1$fit[,2]+1.96*pred1$se.fit[,2]))
   beta2<-as.data.frame(cbind(beta=pred2$fit[,2],beta_lci=pred2$fit[,2]-1.96*pred2$se.fit[,2],beta_uci=pred2$fit[,2]+1.96*pred2$se.fit[,2]))
@@ -187,14 +187,14 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   beta6<-as.data.frame(cbind(beta=pred6$fit[,2],beta_lci=pred6$fit[,2]-1.96*pred6$se.fit[,2],beta_uci=pred6$fit[,2]+1.96*pred6$se.fit[,2]))
   beta7<-as.data.frame(cbind(beta=pred7$fit[,2],beta_lci=pred7$fit[,2]-1.96*pred7$se.fit[,2],beta_uci=pred7$fit[,2]+1.96*pred7$se.fit[,2]))
   
-  #standard error º¹¿ø
+  #standard error ë³µì›
   beta0$beta_se=-with(beta0,(beta_lci-beta)/1.96);beta1$beta_se=-with(beta1,(beta_lci-beta)/1.96)
   beta2$beta_se=-with(beta2,(beta_lci-beta)/1.96);beta3$beta_se=-with(beta3,(beta_lci-beta)/1.96)
   beta4$beta_se=-with(beta4,(beta_lci-beta)/1.96);beta5$beta_se=-with(beta5,(beta_lci-beta)/1.96)
   beta6$beta_se=-with(beta6,(beta_lci-beta)/1.96);beta7$beta_se=-with(beta7,(beta_lci-beta)/1.96)
   
-  #³ëÃâº°·Î º£Å¸°ª »êÃâ: 
-  #³ëÃâ³óµµ ´ÜÀ§ ¸ÂÃçÁÖ±â (PMÀº »ó°ü¾ø´Âµ¥ °¡½º»ó ¿À¿°¹°Áú ¶§¸Å)
+  #ë…¸ì¶œë³„ë¡œ ë² íƒ€ê°’ ì‚°ì¶œ: 
+  #ë…¸ì¶œë†ë„ ë‹¨ìœ„ ë§ì¶°ì£¼ê¸° (PMì€ ìƒê´€ì—†ëŠ”ë° ê°€ìŠ¤ìƒ ì˜¤ì—¼ë¬¼ì§ˆ ë•Œë§¤)
   exp_beta0<-beta0 %>% select(beta,beta_se) %>% mutate(exp=1:nrow(beta0),beta=beta,beta_se=beta_se)
   exp_beta1<-beta1 %>% select(beta,beta_se) %>% mutate(exp=1:nrow(beta1),beta=beta,beta_se=beta_se)
   exp_beta2<-beta2 %>% select(beta,beta_se) %>% mutate(exp=1:nrow(beta2),beta=beta,beta_se=beta_se)
@@ -204,7 +204,7 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   exp_beta6<-beta6 %>% select(beta,beta_se) %>% mutate(exp=1:nrow(beta6),beta=beta,beta_se=beta_se)
   exp_beta7<-beta7 %>% select(beta,beta_se) %>% mutate(exp=1:nrow(beta7),beta=beta,beta_se=beta_se)
   
-  #³ëÃâ ³óµµ¸¦ Á¤¼ö·Î Ç¥Çö 
+  #ë…¸ì¶œ ë†ë„ë¥¼ ì •ìˆ˜ë¡œ í‘œí˜„ 
   a0<-raw;a0$exp=unlist(raw[grep(exposure[e],names(raw))[1]]*unit) %>% round
   a1<-raw;a1$exp=unlist(raw[grep(exposure[e],names(raw))[2]]*unit) %>% round
   a2<-raw;a2$exp=unlist(raw[grep(exposure[e],names(raw))[3]]*unit) %>% round
@@ -214,7 +214,7 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   a6<-raw;a6$exp=unlist(raw[grep(exposure[e],names(raw))[7]]*unit) %>% round
   a7<-raw;a7$exp=unlist(raw[grep(exposure[e],names(raw))[8]]*unit) %>% round
   
-  #³ëÃâ ³óµµº° beta°ª 
+  #ë…¸ì¶œ ë†ë„ë³„ betaê°’ 
   am0<-a0 %>% left_join(exp_beta0,by="exp") %>% dplyr::select(ddate:year,TOT:RESP,sn,dow,sido_KN,exp,beta:beta_se)
   am1<-a1 %>% left_join(exp_beta1,by="exp") %>% dplyr::select(ddate:year,TOT:RESP,sn,dow,sido_KN,exp,beta:beta_se)
   am2<-a2 %>% left_join(exp_beta2,by="exp") %>% dplyr::select(ddate:year,TOT:RESP,sn,dow,sido_KN,exp,beta:beta_se)
@@ -224,26 +224,26 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   am6<-a6 %>% left_join(exp_beta6,by="exp") %>% dplyr::select(ddate:year,TOT:RESP,sn,dow,sido_KN,exp,beta:beta_se)
   am7<-a7 %>% left_join(exp_beta7,by="exp") %>% dplyr::select(ddate:year,TOT:RESP,sn,dow,sido_KN,exp,beta:beta_se)
   
-  #½Ã³ª¸®¿À1: ±âÁØ ³óµµ ÀÌÇÏ´Â °Ç°­¿µÇâ ¾ø´Ù°í °¡Á¤ÇÏ±â
+  #ì‹œë‚˜ë¦¬ì˜¤1: ê¸°ì¤€ ë†ë„ ì´í•˜ëŠ” ê±´ê°•ì˜í–¥ ì—†ë‹¤ê³  ê°€ì •í•˜ê¸°
   pm25_ref=15
   pm10_ref=45
-  #¸¸µé¾î ³õÀº ¿¹Ãø ÀÚ·á ppb ´ÜÀ§ Áõ°¡·Î ¸¸µé¾î³ö¼­ ´ÜÀ§ º¯È¯ 
+  #ë§Œë“¤ì–´ ë†“ì€ ì˜ˆì¸¡ ìë£Œ ppb ë‹¨ìœ„ ì¦ê°€ë¡œ ë§Œë“¤ì–´ë†”ì„œ ë‹¨ìœ„ ë³€í™˜ 
   so2_ref =40 *24.5/64.07 #ppb
   no2_ref =25 *24.5/46.01 #ppb
   co_ref  =3.492*1000     #ppb
   o3_ref  =60 *24.5/48    #ppb
   
-  #½Ã³ª¸®¿À 1ÀÇ ´ë±â¿À¿° ±âÁØ ³óµµ °¡½º»ó ¹°ÁúÀº ppb ´ÜÀ§
+  #ì‹œë‚˜ë¦¬ì˜¤ 1ì˜ ëŒ€ê¸°ì˜¤ì—¼ ê¸°ì¤€ ë†ë„ ê°€ìŠ¤ìƒ ë¬¼ì§ˆì€ ppb ë‹¨ìœ„
   exp_ref=c(15,45,15,13,3492,30)
   
-  #½Ã³ª¸®¿À 1, ´ë±â¿À¿° ±âÁØ³óµµ¿¡ ÇØ´çÇÏ´Â lagº° beta°è¼ö
+  #ì‹œë‚˜ë¦¬ì˜¤ 1, ëŒ€ê¸°ì˜¤ì—¼ ê¸°ì¤€ë†ë„ì— í•´ë‹¹í•˜ëŠ” lagë³„ betaê³„ìˆ˜
   beta0_ref=subset(exp_beta0,exp==exp_ref[e])$beta;beta1_ref=subset(exp_beta1,exp==exp_ref[e])$beta
   beta2_ref=subset(exp_beta2,exp==exp_ref[e])$beta;beta3_ref=subset(exp_beta3,exp==exp_ref[e])$beta
   beta4_ref=subset(exp_beta4,exp==exp_ref[e])$beta;beta5_ref=subset(exp_beta5,exp==exp_ref[e])$beta
   beta6_ref=subset(exp_beta6,exp==exp_ref[e])$beta;beta7_ref=subset(exp_beta7,exp==exp_ref[e])$beta
   
-  #½Ã³ª¸®¿À1¿¡¼­´Â ±âÁØ ³óµµ ÀÌÇÏ´Â °Ç°­¿µÇâ ¾ø´Ù°í °¡Á¤
-  #³ëÃâ ³óµµ°¡ ±âÁØ³óµµº¸´Ù ÀÛÀº °æ¿ì beta¸¦ 0À¸·Î ¸¸µé¾îÁÖ±â 
+  #ì‹œë‚˜ë¦¬ì˜¤1ì—ì„œëŠ” ê¸°ì¤€ ë†ë„ ì´í•˜ëŠ” ê±´ê°•ì˜í–¥ ì—†ë‹¤ê³  ê°€ì •
+  #ë…¸ì¶œ ë†ë„ê°€ ê¸°ì¤€ë†ë„ë³´ë‹¤ ì‘ì€ ê²½ìš° betaë¥¼ 0ìœ¼ë¡œ ë§Œë“¤ì–´ì£¼ê¸° 
   am0$delta_beta1=with(am0,ifelse(exp<=exp_ref[e],0,beta-beta0_ref))
   am1$delta_beta1=with(am1,ifelse(exp<=exp_ref[e],0,beta-beta1_ref))
   am2$delta_beta1=with(am2,ifelse(exp<=exp_ref[e],0,beta-beta2_ref))
@@ -253,7 +253,7 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   am6$delta_beta1=with(am6,ifelse(exp<=exp_ref[e],0,beta-beta6_ref))
   am7$delta_beta1=with(am7,ifelse(exp<=exp_ref[e],0,beta-beta7_ref))
   
-  #½Ã³ª¸®¿À 1 ±âÁØ³óµµ ¿¡ µû¸¥ ½Å·ÚÇÏÇÑ
+  #ì‹œë‚˜ë¦¬ì˜¤ 1 ê¸°ì¤€ë†ë„ ì— ë”°ë¥¸ ì‹ ë¢°í•˜í•œ
   am0$delta_beta1_lci=with(am0,ifelse(exp<=exp_ref[e],0,(beta-beta0_ref)-1.96*beta_se))
   am1$delta_beta1_lci=with(am1,ifelse(exp<=exp_ref[e],0,(beta-beta1_ref)-1.96*beta_se))
   am2$delta_beta1_lci=with(am2,ifelse(exp<=exp_ref[e],0,(beta-beta2_ref)-1.96*beta_se))
@@ -263,7 +263,7 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   am6$delta_beta1_lci=with(am6,ifelse(exp<=exp_ref[e],0,(beta-beta6_ref)-1.96*beta_se))
   am7$delta_beta1_lci=with(am7,ifelse(exp<=exp_ref[e],0,(beta-beta7_ref)-1.96*beta_se))
   
-  #½Ã³ª¸®¿À 1 ±âÁØ³óµµ ¿¡ µû¸¥ ½Å·Ú»óÇÑ 
+  #ì‹œë‚˜ë¦¬ì˜¤ 1 ê¸°ì¤€ë†ë„ ì— ë”°ë¥¸ ì‹ ë¢°ìƒí•œ 
   am0$delta_beta1_uci=with(am0,ifelse(exp<=exp_ref[e],0,(beta-beta0_ref)+1.96*beta_se))
   am1$delta_beta1_uci=with(am1,ifelse(exp<=exp_ref[e],0,(beta-beta1_ref)+1.96*beta_se))
   am2$delta_beta1_uci=with(am2,ifelse(exp<=exp_ref[e],0,(beta-beta2_ref)+1.96*beta_se))
@@ -276,9 +276,9 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   #-----------------------------------------------------------------------------------------#
   #-----------------------------------------------------------------------------------------#
   
-  #½Ã³ª¸®¿À2: ¸ğµç ³óµµ¿¡¼­ º¸°í ½ÍÀ» ¶§
-  #°¢ ´ë±â¿À¿°¹°Áú¿¡ ´ëÇÑ ÀÌµ¿Æò±Õº° ÃÖÀú ³óµµ·Î ¹Ù²ãÁÖ±â 
-  #³ëÃâ ³óµµ°¡ ÃÖÀúÀÎ ÁöÁ¡
+  #ì‹œë‚˜ë¦¬ì˜¤2: ëª¨ë“  ë†ë„ì—ì„œ ë³´ê³  ì‹¶ì„ ë•Œ
+  #ê° ëŒ€ê¸°ì˜¤ì—¼ë¬¼ì§ˆì— ëŒ€í•œ ì´ë™í‰ê· ë³„ ìµœì € ë†ë„ë¡œ ë°”ê¿”ì£¼ê¸° 
+  #ë…¸ì¶œ ë†ë„ê°€ ìµœì €ì¸ ì§€ì 
   beta0_ref2=subset(exp_beta0,exp==ifelse(min(am0$exp,na.rm=T)==0,1,min(am0$exp,na.rm=T)))$beta
   beta1_ref2=subset(exp_beta1,exp==ifelse(min(am1$exp,na.rm=T)==0,1,min(am1$exp,na.rm=T)))$beta
   beta2_ref2=subset(exp_beta2,exp==ifelse(min(am2$exp,na.rm=T)==0,1,min(am2$exp,na.rm=T)))$beta
@@ -288,13 +288,13 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   beta6_ref2=subset(exp_beta6,exp==ifelse(min(am6$exp,na.rm=T)==0,1,min(am6$exp,na.rm=T)))$beta
   beta7_ref2=subset(exp_beta7,exp==ifelse(min(am7$exp,na.rm=T)==0,1,min(am7$exp,na.rm=T)))$beta
   
-  #³ëÃâ ³óµµº°, lag Áö¿¬º° ³ëÃâ ºñ±³ 
+  #ë…¸ì¶œ ë†ë„ë³„, lag ì§€ì—°ë³„ ë…¸ì¶œ ë¹„êµ 
   am0$delta_beta2=with(am0,beta-beta0_ref2);am1$delta_beta2=with(am1,beta-beta1_ref2)
   am2$delta_beta2=with(am2,beta-beta2_ref2);am3$delta_beta2=with(am3,beta-beta3_ref2)
   am4$delta_beta2=with(am4,beta-beta4_ref2);am5$delta_beta2=with(am5,beta-beta5_ref2)
   am6$delta_beta2=with(am6,beta-beta6_ref2);am7$delta_beta2=with(am7,beta-beta7_ref2)
   
-  #½Ã³ª¸®¿À 2 ±âÁØ³óµµ¿¡ µû¸¥ ½Å·ÚÇÏÇÑ
+  #ì‹œë‚˜ë¦¬ì˜¤ 2 ê¸°ì¤€ë†ë„ì— ë”°ë¥¸ ì‹ ë¢°í•˜í•œ
   am0$delta_beta2_lci=with(am0,(beta-beta0_ref2)-1.96*beta_se)
   am1$delta_beta2_lci=with(am1,(beta-beta1_ref2)-1.96*beta_se)
   am2$delta_beta2_lci=with(am2,(beta-beta2_ref2)-1.96*beta_se)
@@ -304,7 +304,7 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   am6$delta_beta2_lci=with(am6,(beta-beta6_ref2)-1.96*beta_se)
   am7$delta_beta2_lci=with(am7,(beta-beta7_ref2)-1.96*beta_se)
   
-  #½Ã³ª¸®¿À 2 ±âÁØ³óµµ ¿¡ µû¸¥ ½Å·Ú»óÇÑ 
+  #ì‹œë‚˜ë¦¬ì˜¤ 2 ê¸°ì¤€ë†ë„ ì— ë”°ë¥¸ ì‹ ë¢°ìƒí•œ 
   am0$delta_beta2_uci=with(am0,(beta-beta0_ref2)+1.96*beta_se)
   am1$delta_beta2_uci=with(am1,(beta-beta1_ref2)+1.96*beta_se)
   am2$delta_beta2_uci=with(am2,(beta-beta2_ref2)+1.96*beta_se)
@@ -315,7 +315,7 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   am7$delta_beta2_uci=with(am7,(beta-beta7_ref2)+1.96*beta_se)
   
   #-----------------------------------------------------------------------------------------#
-  #À§¿¡¼­ »êÃâÇÑ °á°ú¸¦ °¡Áö°í ÃÊ°ú»ç¸Á °è»ê
+  #ìœ„ì—ì„œ ì‚°ì¶œí•œ ê²°ê³¼ë¥¼ ê°€ì§€ê³  ì´ˆê³¼ì‚¬ë§ ê³„ì‚°
   excess_func<-function(data){
     
     dd<-data
@@ -344,15 +344,15 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   excess_am6<-excess_func(am6);excess_am6$exposure=exposure[e];excess_am6$lag="lag06"
   excess_am7<-excess_func(am7);excess_am7$exposure=exposure[e];excess_am7$lag="lag07"
   
-  #ÃÊ°ú»ç¸Á »êÃâÇÑ °á°ú/ ¿¬µµº°
+  #ì´ˆê³¼ì‚¬ë§ ì‚°ì¶œí•œ ê²°ê³¼/ ì—°ë„ë³„
   excess_am0$outcome=dth[m];excess_am1$outcome=dth[m];excess_am2$outcome=dth[m];excess_am3$outcome=dth[m]
   excess_am4$outcome=dth[m];excess_am5$outcome=dth[m];excess_am6$outcome=dth[m];excess_am7$outcome=dth[m]
   
-  #°¢ ³ëÃâÁö¿¬º° °á°ú merge
+  #ê° ë…¸ì¶œì§€ì—°ë³„ ê²°ê³¼ merge
   excess_result<-rbind(excess_am0,excess_am1,excess_am2,excess_am3,
                        excess_am4,excess_am5,excess_am6,excess_am7)
   
-  #³ëÃâ Áö¿¬º°, ³óµµ-¹İÀÀ ±×¸² °°ÀÌ ±×·Á¼­ º¸±â 
+  #ë…¸ì¶œ ì§€ì—°ë³„, ë†ë„-ë°˜ì‘ ê·¸ë¦¼ ê°™ì´ ê·¸ë ¤ì„œ ë³´ê¸° 
   beta_lag_comp<-function(data){
     d<-data
     d %>% select(exp,beta,beta_se,
@@ -386,7 +386,7 @@ gamm4_nonlinear_excess_mor<-function(index,unit){
   
   result}
 
-#ºñ¼±ÇüÀ¸·Î ÃßÁ¤ÇÑ ÃÊ°ú»ç¸ÁÀÚ ¼ö¿Í ³ëÃâ ³óµµº° º£Å¸, ½Å·Ú±¸°£ °á°ú 
+#ë¹„ì„ í˜•ìœ¼ë¡œ ì¶”ì •í•œ ì´ˆê³¼ì‚¬ë§ì ìˆ˜ì™€ ë…¸ì¶œ ë†ë„ë³„ ë² íƒ€, ì‹ ë¢°êµ¬ê°„ ê²°ê³¼ 
 #All-cause death & air pollution
 result1<-gamm4_nonlinear_excess_mor(index_list[1],1)
 result2<-gamm4_nonlinear_excess_mor(index_list[2],1)
@@ -419,7 +419,7 @@ result22<-gamm4_nonlinear_excess_mor(index_list[22],1000)
 result23<-gamm4_nonlinear_excess_mor(index_list[23],1000)
 result24<-gamm4_nonlinear_excess_mor(index_list[24],1000)
 
-setwd("D:\\SNU\\¿¬±¸\\KEI_È¯°æº¸°Ç°¨½ÃÃ¼°è\\ºĞ¼®\\´Ü±âÁúº´ºÎ´ã\\result\\ºñ¼±Çü°á°ú\\excess_mor")
+setwd("D:\\SNU\\ì—°êµ¬\\KEI_í™˜ê²½ë³´ê±´ê°ì‹œì²´ê³„\\ë¶„ì„\\ë‹¨ê¸°ì§ˆë³‘ë¶€ë‹´\\result\\ë¹„ì„ í˜•ê²°ê³¼\\excess_mor")
 write.csv(result1[1][[1]] ,file="excess_tot_pm25.csv"        ,row.names=F,na="")
 write.csv(result2[1][[1]] ,file="excess_tot_pm10.csv"        ,row.names=F,na="")
 write.csv(result3[1][[1]] ,file="excess_tot_so2.csv"         ,row.names=F,na="")
@@ -446,7 +446,7 @@ write.csv(result23[1][[1]],file="excess_respiratory_co.csv"  ,row.names=F,na="")
 write.csv(result24[1][[1]],file="excess_respiratory_o3.csv"  ,row.names=F,na="")
 
 
-setwd("D:\\SNU\\¿¬±¸\\KEI_È¯°æº¸°Ç°¨½ÃÃ¼°è\\ºĞ¼®\\´Ü±âÁúº´ºÎ´ã\\result\\ºñ¼±Çü°á°ú\\cr")
+setwd("D:\\SNU\\ì—°êµ¬\\KEI_í™˜ê²½ë³´ê±´ê°ì‹œì²´ê³„\\ë¶„ì„\\ë‹¨ê¸°ì§ˆë³‘ë¶€ë‹´\\result\\ë¹„ì„ í˜•ê²°ê³¼\\cr")
 write.csv(result1[2][[1]] ,file="cr_tot_pm25.csv"        ,row.names=F,na="")
 write.csv(result2[2][[1]] ,file="cr_tot_pm10.csv"        ,row.names=F,na="")
 write.csv(result3[2][[1]] ,file="cr_tot_so2.csv"         ,row.names=F,na="")
