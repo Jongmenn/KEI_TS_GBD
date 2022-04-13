@@ -10,7 +10,7 @@ daily_death_final$sido_KN =with(daily_death_final,factor(sido_KN,levels=unique(s
 daily_death_final$sidoname=with(daily_death_final,factor(sidoname,levels=unique(sidoname)))
 
 #선형가정 추정한 모델 결과 
-gamm4_result<-read_excel("D:\\SNU\\연구\\KEI_환경보건감시체계\\분석\\단기질병부담\\KEI_SNU_TS_analysis_OJM_20220330.xlsx",
+gamm4_result<-read_excel("D:\\SNU\\연구\\KEI_환경보건감시체계\\분석\\단기질병부담\\KEI_SNU_TS_analysis_OJM_20220413.xlsx",
                          sheet="선형결과(gamm4)")
 
 setwd("D:\\SNU\\연구\\KEI_환경보건감시체계\\분석\\단기질병부담\\result\\도시별")
@@ -90,7 +90,7 @@ gamm4_excess_func<-function(Y,X,expdiff,exposure,i,outcome){
   d$outcome=outcome  #결과변수 (사망자수, 입원자수)
   
   #기준농도-최저농도  (delta exposure)
-  d$expdiff2=with(d,exposure-0)
+  d$expdiff2=with(d,exposure-min(exposure,na.rm=T)
   
   #원시자료에서 보고자하는 노출시점(lag01이면 lag01노출에 대한)
   #노출 값 존재하는 경우에 대해서만 산출
@@ -114,11 +114,11 @@ gamm4_excess_func<-function(Y,X,expdiff,exposure,i,outcome){
   d$e_dth_uci2=with(d,1/ss$unit*expdiff2*outcome*((RR_uci-1)/RR_uci))
   
   d2<-d %>% group_by(sido_KN,year) %>% summarise(e_dth=sum(e_dth,na.rm=T),
-                                         e_dth_lci =sum(e_dth_lci,na.rm=T),
-                                         e_dth_uci =sum(e_dth_uci,na.rm=T),
-                                         e_dth2    =sum(e_dth2,na.rm=T),
-                                         e_dth_lci2=sum(e_dth_lci2,na.rm=T),
-                                         e_dth_uci2=sum(e_dth_uci2,na.rm=T)) %>%
+                                            e_dth_lci =sum(e_dth_lci,na.rm=T),
+                                            e_dth_uci =sum(e_dth_uci,na.rm=T),
+                                            e_dth2    =sum(e_dth2,na.rm=T),
+                                            e_dth_lci2=sum(e_dth_lci2,na.rm=T),
+                                            e_dth_uci2=sum(e_dth_uci2,na.rm=T)) %>%
     
     mutate(outcome=Y,exposure=X,lag=paste0("lag0",i-1))
   
