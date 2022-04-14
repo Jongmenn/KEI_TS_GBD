@@ -1,4 +1,4 @@
-setwd("D:\\SNU\\¿¬±¸\\KEI_È¯°æº¸°Ç°¨½ÃÃ¼°è\\ºĞ¼®\\´Ü±âÁúº´ºÎ´ã\\result\\ºñ¼±Çü°á°ú\\cr")
+setwd("D:\\SNU\\ì—°êµ¬\\KEI_í™˜ê²½ë³´ê±´ê°ì‹œì²´ê³„\\ë¶„ì„\\ë‹¨ê¸°ì§ˆë³‘ë¶€ë‹´\\result\\ë¹„ì„ í˜•ê²°ê³¼\\cr")
 
 d<-read.csv("cr_AP_merge.csv")
 
@@ -8,9 +8,6 @@ d03<-subset(d,outcome=="All-cause" & exposure=="so2")
 d04<-subset(d,outcome=="All-cause" & exposure=="no2")
 d05<-subset(d,outcome=="All-cause" & exposure=="co")
 d06<-subset(d,outcome=="All-cause" & exposure=="o3")
-
-d01 %>% group_by(lag) %>% summarise(n=length(lag))
-d07 %>% group_by(lag) %>% summarise(n=length(lag))
 
 d07<-subset(d,outcome=="nonacc" & exposure=="pm25")
 d08<-subset(d,outcome=="nonacc" & exposure=="pm10")
@@ -33,7 +30,7 @@ d22<-subset(d,outcome=="respiratory" & exposure=="no2")
 d23<-subset(d,outcome=="respiratory" & exposure=="co")
 d24<-subset(d,outcome=="respiratory" & exposure=="o3")
 
-#ggplot »ö±ò
+#ggplot ìƒ‰ê¹”
 getPalette = colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
 getPalette(8)
 
