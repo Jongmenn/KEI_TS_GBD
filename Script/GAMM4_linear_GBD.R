@@ -90,7 +90,7 @@ gamm4_excess_func<-function(Y,X,expdiff,exposure,i,outcome){
   d$outcome=outcome  #결과변수 (사망자수, 입원자수)
   
   #기준농도-최저농도  (delta exposure)
-  d$expdiff2=with(d,exposure-min(exposure,na.rm=T)
+  d$expdiff2=with(d,exposure-min(exposure,na.rm=T))
   
   #원시자료에서 보고자하는 노출시점(lag01이면 lag01노출에 대한)
   #노출 값 존재하는 경우에 대해서만 산출
