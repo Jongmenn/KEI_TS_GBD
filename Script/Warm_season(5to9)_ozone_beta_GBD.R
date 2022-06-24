@@ -1,5 +1,222 @@
 #--------------------------------------------------------------------------------------------#
 #library
+pacman::p_load(gamm4,mgcv,lme4,splines,ggplot2,gridExtra,dplyr,lubridate,scales,RColorBrewer)
+#공단 단기 질병부담 자료 
+daily_death_final<-read.csv("D:\\SNU\\연구\\KEI_환경보건감시체계\\분석\\단기질병부담\\daily_death_final.csv",
+                            fileEncoding = "euc-kr")
+
+daily_death_final$ddate=ymd(daily_death_final$ddate)
+daily_death_final$sido_KN =with(daily_death_final,factor(sido_KN,levels=unique(sido_KN)))
+daily_death_final$sidoname=with(daily_death_final,factor(sidoname,levels=unique(sidoname)))
+
+#여기 이하부터는 모델링 
+daily_death_final$sidow=with(daily_death_final,as.factor(sido*10+as.numeric(as.character(dow))))
+table(daily_death_final$sidow)
+
+#단일지연 자료를 포함하면 결측이 좀 있으니, 이동평균 노출만 우선고려
+#세종지역 제외 
+
+dat<-daily_death_final %>% dplyr:: select(key:sidoname,TOT,NON_ACC,CVD,RESP,meantemp,meanhumi,dewtemp,simpat,
+                                          pm25_new,pm10:o3,
+                                          sn:dowfirstday,sidow,
+                                          meantemp_m1:meantemp_m21,
+                                          meanhumi_m1:meanhumi_m21,
+                                          dewtemp_m1 :dewtemp_m21,
+                                          simpat_m1  :simpat_m21,
+                                          pm25_new_m1:pm25_new_m21,
+                                          pm10_m1    :pm10_m21,
+                                          so2_m1     :so2_m21,
+                                          no2_m1     :no2_m21,
+                                          co_m1      :co_m21,
+                                          o3_m1      :o3_m21) %>% filter(sido_KN!="세종")
+
+dat<-dat[complete.cases(dat),];#약3,500건 빠짐 
+
+#전체 사망, 당일~하루전 이동평균 PM2.5, 당일~하루전 이동평균 체감기온, time trend 변수들 
+dat.r<-dat %>% dplyr:: select(ddate,year,month,TOT,NON_ACC,CVD,RESP,sn,sidow,dow,sido_KN,
+                              pm25_new,pm25_new_m1:pm25_new_m7,
+                              pm10,pm10_m1    :pm10_m7,
+                              so2,so2_m1     :so2_m7,
+                              no2,no2_m1     :no2_m7,
+                              co,co_m1      :co_m7,
+                              o3,o3_m1      :o3_m7,simpat,simpat_m1:simpat_m7)
+
+#-------------------------------------------------------------#
+#-------------------------------------------------------------#
+#GAMM4 모형 돌린 결과 저장하기
+#선형, 비선형 둘다 추정하기
+#오존 warm season (5~9)!! / 4~9 , 6~8
+#우리나라 오존 5월 부터 증가시기 
+
+dat.w<-subset(dat.r,month %in% c(5:9))
+
+#-------------------------------------------------------------#
+#-------------------------------------------------------------#
+setwd("D:\\SNU\\연구\\KEI_환경보건감시체계\\분석\\단기질병부담\\gamm4_linear")
+#전체 원인 사망 (All-cause)
+g0<-gamm4(TOT~o3   +s(simpat)   +s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g0,file="gamm4_tot_o3_linear_m0.rds");rm(g0)
+g1<-gamm4(TOT~o3_m1+s(simpat_m1)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g1,file="gamm4_tot_o3_linear_m1.rds");rm(g1)
+g2<-gamm4(TOT~o3_m2+s(simpat_m2)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g2,file="gamm4_tot_o3_linear_m2.rds");rm(g2)
+g3<-gamm4(TOT~o3_m3+s(simpat_m3)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g3,file="gamm4_tot_o3_linear_m3.rds");rm(g3)
+g4<-gamm4(TOT~o3_m4+s(simpat_m4)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g4,file="gamm4_tot_o3_linear_m4.rds");rm(g4)
+g5<-gamm4(TOT~o3_m5+s(simpat_m5)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g5,file="gamm4_tot_o3_linear_m5.rds");rm(g5)
+g6<-gamm4(TOT~o3_m6+s(simpat_m6)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g6,file="gamm4_tot_o3_linear_m6.rds");rm(g6)
+g7<-gamm4(TOT~o3_m7+s(simpat_m7)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g7,file="gamm4_tot_o3_linear_m7.rds");rm(g7)
+
+#-------------------------------------------------------------#
+#-------------------------------------------------------------#
+#비사고 사망(NOn-accidential death)
+g0<-gamm4(NON_ACC~o3   +s(simpat)   +s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g0,file="gamm4_nonacc_o3_linear_m0.rds");rm(g0)
+g1<-gamm4(NON_ACC~o3_m1+s(simpat_m1)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g1,file="gamm4_nonacc_o3_linear_m1.rds");rm(g1)
+g2<-gamm4(NON_ACC~o3_m2+s(simpat_m2)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g2,file="gamm4_nonacc_o3_linear_m2.rds");rm(g2)
+g3<-gamm4(NON_ACC~o3_m3+s(simpat_m3)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g3,file="gamm4_nonacc_o3_linear_m3.rds");rm(g3)
+g4<-gamm4(NON_ACC~o3_m4+s(simpat_m4)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g4,file="gamm4_nonacc_o3_linear_m4.rds");rm(g4)
+g5<-gamm4(NON_ACC~o3_m5+s(simpat_m5)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g5,file="gamm4_nonacc_o3_linear_m5.rds");rm(g5)
+g6<-gamm4(NON_ACC~o3_m6+s(simpat_m6)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g6,file="gamm4_nonacc_o3_linear_m6.rds");rm(g6)
+g7<-gamm4(NON_ACC~o3_m7+s(simpat_m7)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g7,file="gamm4_nonacc_o3_linear_m7.rds");rm(g7)
+
+#-------------------------------------------------------------#
+#-------------------------------------------------------------#
+#전체 심혈관 (CVD)
+g0<-gamm4(CVD~o3   +s(simpat)   +s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g0,file="gamm4_cvd_o3_linear_m0.rds");rm(g0)
+g1<-gamm4(CVD~o3_m1+s(simpat_m1)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g1,file="gamm4_cvd_o3_linear_m1.rds");rm(g1)
+g2<-gamm4(CVD~o3_m2+s(simpat_m2)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g2,file="gamm4_cvd_o3_linear_m2.rds");rm(g2)
+g3<-gamm4(CVD~o3_m3+s(simpat_m3)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g3,file="gamm4_cvd_o3_linear_m3.rds");rm(g3)
+g4<-gamm4(CVD~o3_m4+s(simpat_m4)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g4,file="gamm4_cvd_o3_linear_m4.rds");rm(g4)
+g5<-gamm4(CVD~o3_m5+s(simpat_m5)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g5,file="gamm4_cvd_o3_linear_m5.rds");rm(g5)
+g6<-gamm4(CVD~o3_m6+s(simpat_m6)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g6,file="gamm4_cvd_o3_linear_m6.rds");rm(g6)
+g7<-gamm4(CVD~o3_m7+s(simpat_m7)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g7,file="gamm4_cvd_o3_linear_m7.rds");rm(g7)
+
+#-------------------------------------------------------------#
+#-------------------------------------------------------------#
+#전체 호흡기(Respiratory)
+g0<-gamm4(RESP~o3   +s(simpat)   +s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g0,file="gamm4_resp_o3_linear_m0.rds");rm(g0)
+g1<-gamm4(RESP~o3_m1+s(simpat_m1)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g1,file="gamm4_resp_o3_linear_m1.rds");rm(g1)
+g2<-gamm4(RESP~o3_m2+s(simpat_m2)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g2,file="gamm4_resp_o3_linear_m2.rds");rm(g2)
+g3<-gamm4(RESP~o3_m3+s(simpat_m3)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g3,file="gamm4_resp_o3_linear_m3.rds");rm(g3)
+g4<-gamm4(RESP~o3_m4+s(simpat_m4)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g4,file="gamm4_resp_o3_linear_m4.rds");rm(g4)
+g5<-gamm4(RESP~o3_m5+s(simpat_m5)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g5,file="gamm4_resp_o3_linear_m5.rds");rm(g5)
+g6<-gamm4(RESP~o3_m6+s(simpat_m6)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g6,file="gamm4_resp_o3_linear_m6.rds");rm(g6)
+g7<-gamm4(RESP~o3_m7+s(simpat_m7)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g7,file="gamm4_resp_o3_linear_m7.rds");rm(g7)
+
+#-------------------------------------------------------------#
+#-------------------------------------------------------------#
+#비선형 가정 
+setwd("D:\\SNU\\연구\\KEI_환경보건감시체계\\분석\\단기질병부담\\gamm4\\warm_season_ozone") 
+
+#전체 원인 사망 (All-cause)
+g0<-gamm4(TOT~s(o3)   +s(simpat)   +s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g0,file="gamm4_tot_o3_nonlinear_m0.rds");rm(g0)
+g1<-gamm4(TOT~s(o3_m1)+s(simpat_m1)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g1,file="gamm4_tot_o3_nonlinear_m1.rds");rm(g1)
+g2<-gamm4(TOT~s(o3_m2)+s(simpat_m2)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g2,file="gamm4_tot_o3_nonlinear_m2.rds");rm(g2)
+g3<-gamm4(TOT~s(o3_m3)+s(simpat_m3)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g3,file="gamm4_tot_o3_nonlinear_m3.rds");rm(g3)
+g4<-gamm4(TOT~s(o3_m4)+s(simpat_m4)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g4,file="gamm4_tot_o3_nonlinear_m4.rds");rm(g4)
+g5<-gamm4(TOT~s(o3_m5)+s(simpat_m5)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g5,file="gamm4_tot_o3_nonlinear_m5.rds");rm(g5)
+g6<-gamm4(TOT~s(o3_m6)+s(simpat_m6)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g6,file="gamm4_tot_o3_nonlinear_m6.rds");rm(g6)
+g7<-gamm4(TOT~s(o3_m7)+s(simpat_m7)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g7,file="gamm4_tot_o3_nonlinear_m7.rds");rm(g7)
+
+#-------------------------------------------------------------#
+#-------------------------------------------------------------#
+#비사고 사망(NOn-accidential death)
+g0<-gamm4(NON_ACC~s(o3)   +s(simpat)   +s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g0,file="gamm4_nonacc_o3_nonlinear_m0.rds");rm(g0)
+g1<-gamm4(NON_ACC~s(o3_m1)+s(simpat_m1)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g1,file="gamm4_nonacc_o3_nonlinear_m1.rds");rm(g1)
+g2<-gamm4(NON_ACC~s(o3_m2)+s(simpat_m2)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g2,file="gamm4_nonacc_o3_nonlinear_m2.rds");rm(g2)
+g3<-gamm4(NON_ACC~s(o3_m3)+s(simpat_m3)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g3,file="gamm4_nonacc_o3_nonlinear_m3.rds");rm(g3)
+g4<-gamm4(NON_ACC~s(o3_m4)+s(simpat_m4)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g4,file="gamm4_nonacc_o3_nonlinear_m4.rds");rm(g4)
+g5<-gamm4(NON_ACC~s(o3_m5)+s(simpat_m5)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g5,file="gamm4_nonacc_o3_nonlinear_m5.rds");rm(g5)
+g6<-gamm4(NON_ACC~s(o3_m6)+s(simpat_m6)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g6,file="gamm4_nonacc_o3_nonlinear_m6.rds");rm(g6)
+g7<-gamm4(NON_ACC~s(o3_m7)+s(simpat_m7)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g7,file="gamm4_nonacc_o3_nonlinear_m7.rds");rm(g7)
+
+#-------------------------------------------------------------#
+#-------------------------------------------------------------#
+#전체 심혈관 (CVD)
+g0<-gamm4(CVD~s(o3)   +s(simpat)   +s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g0,file="gamm4_cvd_o3_nonlinear_m0.rds");rm(g0)
+g1<-gamm4(CVD~s(o3_m1)+s(simpat_m1)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g1,file="gamm4_cvd_o3_nonlinear_m1.rds");rm(g1)
+g2<-gamm4(CVD~s(o3_m2)+s(simpat_m2)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g2,file="gamm4_cvd_o3_nonlinear_m2.rds");rm(g2)
+g3<-gamm4(CVD~s(o3_m3)+s(simpat_m3)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g3,file="gamm4_cvd_o3_nonlinear_m3.rds");rm(g3)
+g4<-gamm4(CVD~s(o3_m4)+s(simpat_m4)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g4,file="gamm4_cvd_o3_nonlinear_m4.rds");rm(g4)
+g5<-gamm4(CVD~s(o3_m5)+s(simpat_m5)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g5,file="gamm4_cvd_o3_nonlinear_m5.rds");rm(g5)
+g6<-gamm4(CVD~s(o3_m6)+s(simpat_m6)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g6,file="gamm4_cvd_o3_nonlinear_m6.rds");rm(g6)
+g7<-gamm4(CVD~s(o3_m7)+s(simpat_m7)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g7,file="gamm4_cvd_o3_nonlinear_m7.rds");rm(g7)
+
+#-------------------------------------------------------------#
+#-------------------------------------------------------------#
+#전체 호흡기(Respiratory)
+g0<-gamm4(RESP~s(o3)   +s(simpat)   +s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g0,file="gamm4_resp_o3_nonlinear_m0.rds");rm(g0)
+g1<-gamm4(RESP~s(o3_m1)+s(simpat_m1)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g1,file="gamm4_resp_o3_nonlinear_m1.rds");rm(g1)
+g2<-gamm4(RESP~s(o3_m2)+s(simpat_m2)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g2,file="gamm4_resp_o3_nonlinear_m2.rds");rm(g2)
+g3<-gamm4(RESP~s(o3_m3)+s(simpat_m3)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g3,file="gamm4_resp_o3_nonlinear_m3.rds");rm(g3)
+g4<-gamm4(RESP~s(o3_m4)+s(simpat_m4)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g4,file="gamm4_resp_o3_nonlinear_m4.rds");rm(g4)
+g5<-gamm4(RESP~s(o3_m5)+s(simpat_m5)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g5,file="gamm4_resp_o3_nonlinear_m5.rds");rm(g5)
+g6<-gamm4(RESP~s(o3_m6)+s(simpat_m6)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g6,file="gamm4_resp_o3_nonlinear_m6.rds");rm(g6)
+g7<-gamm4(RESP~s(o3_m7)+s(simpat_m7)+s(sn,k=6*10)+factor(dow),random=~(1|sido_KN),family="poisson",data=dat.w)
+saveRDS(g7,file="gamm4_resp_o3_nonlinear_m7.rds");rm(g7)
+
+#--------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------#
+#library
 pacman::p_load(gamm4,mgcv,lme4,splines,ggplot2,gridExtra,dplyr,lubridate,scales,RColorBrewer,
                stringr)
 
