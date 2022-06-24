@@ -60,7 +60,7 @@ gamm4_linear_beta_func<-function(dir,result_list){
     df2$단위=ifelse(exposure=="pm25" | exposure=="pm10","ug/m3","ppm")
     
     df2$unit=ifelse(exposure=="pm25" | exposure=="pm10",1,
-                    ifelse(exposure=="co",0.01,0.001))
+                    ifelse(exposure=="co",100,1000))
     
     #unit change 대기오염 물질 같은 경우 검토
     uc<-1/df2$unit
