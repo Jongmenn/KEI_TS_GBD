@@ -171,22 +171,29 @@ gamm4_excess_func_strata<-function(Y,X,sub,expdiff,exposure,i,outcome){
   #추정한 RR 값 
   
   ss<-subset(gamm4_result, outcome==Y & exposure==X & subgroup==sub)[i,]
-  RR    <-ss$RR
-  RR_lci<-ss$RR_lci
-  RR_uci<-ss$RR_uci
+  
+  d$RR_s1    =exp(d$expdiff*ss$Estimate)
+  d$RR_lci_s1=exp(d$expdiff*(ss$Estimate-1.96*ss$SE))
+  d$RR_uci_s1=exp(d$expdiff*(ss$Estimate+1.96*ss$SE))
+  
+  d$RR_s2    =exp(d$expdiff2*ss$Estimate)
+  d$RR_lci_s2=exp(d$expdiff2*(ss$Estimate-1.96*ss$SE))
+  d$RR_uci_s2=exp(d$expdiff2*(ss$Estimate+1.96*ss$SE))
   
   #Attributable risk % (RR-1)/RR  ;  1-1/RR
-  #AR% = (RR ??? 1) / RR x 100. AR% is also known as “Attributable Fraction (Exposed)”
+  #AR% = (RR - 1) / RR x 100. AR% is also known as “Attributable Fraction (Exposed)”
   
-  #시나리오 1: 농도차이(고농도만 관심)*관심질환(사망자 수)*Attributable risk
-  d$e_dth    =with(d,1/ss$unit*expdiff*outcome*((RR-1)/RR))
-  d$e_dth_lci=with(d,1/ss$unit*expdiff*outcome*((RR_lci-1)/RR_lci))
-  d$e_dth_uci=with(d,1/ss$unit*expdiff*outcome*((RR_uci-1)/RR_uci))
+  #초과 사망자 산출: 인구수*사망률* 기여분율; 여기서 인구수*사망률=> 사망건 수
   
-  #시나리오 2: 농도차이(모든 농도고려)*관심질환(사망자 수)*Attributable risk
-  d$e_dth2    =with(d,1/ss$unit*expdiff2*outcome*((RR-1)/RR))
-  d$e_dth_lci2=with(d,1/ss$unit*expdiff2*outcome*((RR_lci-1)/RR_lci))
-  d$e_dth_uci2=with(d,1/ss$unit*expdiff2*outcome*((RR_uci-1)/RR_uci))
+  #시나리오 1: 초과 사망자수 산출
+  d$e_dth    =with(d,outcome*((RR_s1-1)/RR_s1))
+  d$e_dth_lci=with(d,outcome*((RR_lci_s1-1)/RR_lci_s1))
+  d$e_dth_uci=with(d,outcome*((RR_uci_s1-1)/RR_uci_s1))
+  
+  #시나리오 2: 초과 사망자수 산출
+  d$e_dth2    =with(d,outcome*((RR_s2-1)/RR_s2))
+  d$e_dth_lci2=with(d,outcome*((RR_lci_s2-1)/RR_lci_s2))
+  d$e_dth_uci2=with(d,outcome*((RR_uci_s2-1)/RR_uci_s2))
   
   d2<-d %>% group_by(sido_KN,year) %>% summarise(e_dth=sum(e_dth,na.rm=T),
                                                  e_dth_lci =sum(e_dth_lci,na.rm=T),
@@ -1084,4 +1091,3 @@ write.csv(tb_respiratory_o3.r  ,file="tb_respiratory_o3.r.csv"  ,row.names=F,na=
 
 #---------------------------------------------------------------------------------------------------------------------------#
 #---------------------------------------------------------------------------------------------------------------------------#
-
