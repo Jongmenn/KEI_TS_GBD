@@ -1,9 +1,8 @@
-pacman::p_load(gamm4,mgcv,lme4,splines,ggplot2,gridExtra,dplyr,lubridate,scales,
-               RColorBrewer)
+pacman::p_load(gamm4,mgcv,lme4,splines,ggplot2,gridExtra,dplyr,lubridate,scales,RColorBrewer)
 
 #사망 정리자료 
 setwd("D:\\SNU\\연구\\KEI_환경보건감시체계\\분석\\단기질병부담")
-daily_death_final<-read.csv("daily_death_final.csv")
+daily_death_final<-read.csv("daily_death_final.csv",fileEncoding = "euc-kr")
 
 daily_death_final$ddate=ymd(daily_death_final$ddate)
 daily_death_final$sido_KN =with(daily_death_final,factor(sido_KN,levels=unique(sido_KN)))
@@ -84,9 +83,11 @@ raw$o3_m7_diff=with(raw,ifelse(o3_m7-o3_ref>0,o3_m7-o3_ref,0))
 
 
 gamm4_excess_func<-function(Y,X,expdiff,exposure,i,outcome){
+  
   d<-raw
   d$expdiff=expdiff  #delta exposure (노출 변화량)
-  d$exposue=exposure #노출변수 (대기오염)
+  
+  d$exposure=exposure #노출변수 (대기오염)
   d$outcome=outcome  #결과변수 (사망자수, 입원자수)
   
   #기준농도-최저농도  (delta exposure)
@@ -96,29 +97,42 @@ gamm4_excess_func<-function(Y,X,expdiff,exposure,i,outcome){
   #노출 값 존재하는 경우에 대해서만 산출
   #추정한 RR 값 
   ss<-subset(gamm4_result, outcome==Y & exposure==X)[i,]
-  RR    <-ss$RR
-  RR_lci<-ss$RR_lci
-  RR_uci<-ss$RR_uci
+  
+  #unit은 PM2.5/PM10은 1, 다른 대기오염물질은 0.001로 되어있음 (단위변환)
+  #농도차이 (농도변화량)에 따른 상대위험도 산출
+  
+  #시나리오 1: 농도차이(고농도만 관심)
+  #시나리오 2: 농도차이(모든 농도고려)
+  
+  d$RR_s1    =exp(d$expdiff*ss$Estimate)
+  d$RR_lci_s1=exp(d$expdiff*(ss$Estimate-1.96*ss$SE))
+  d$RR_uci_s1=exp(d$expdiff*(ss$Estimate+1.96*ss$SE))
+
+  d$RR_s2    =exp(d$expdiff2*ss$Estimate)
+  d$RR_lci_s2=exp(d$expdiff2*(ss$Estimate-1.96*ss$SE))
+  d$RR_uci_s2=exp(d$expdiff2*(ss$Estimate+1.96*ss$SE))
   
   #Attributable risk % (RR-1)/RR  ;  1-1/RR
-  #AR% = (RR ??? 1) / RR x 100. AR% is also known as “Attributable Fraction (Exposed)”
+  #AR% = (RR - 1) / RR x 100. AR% is also known as “Attributable Fraction (Exposed)”
+
+  #초과 사망자 산출: 인구수*사망률* 기여분율; 여기서 인구수*사망률=> 사망건 수
   
-  #시나리오 1: 농도차이(고농도만 관심)*관심질환(사망자 수)*Attributable risk
-  d$e_dth    =with(d,1/ss$unit*expdiff*outcome*((RR-1)/RR))
-  d$e_dth_lci=with(d,1/ss$unit*expdiff*outcome*((RR_lci-1)/RR_lci))
-  d$e_dth_uci=with(d,1/ss$unit*expdiff*outcome*((RR_uci-1)/RR_uci))
+  #시나리오 1: 초과 사망자수 산출
+  d$e_dth    =with(d,outcome*((RR_s1-1)/RR_s1))
+  d$e_dth_lci=with(d,outcome*((RR_lci_s1-1)/RR_lci_s1))
+  d$e_dth_uci=with(d,outcome*((RR_uci_s1-1)/RR_uci_s1))
   
-  #시나리오 2: 농도차이(모든 농도고려)*관심질환(사망자 수)*Attributable risk
-  d$e_dth2    =with(d,1/ss$unit*expdiff2*outcome*((RR-1)/RR))
-  d$e_dth_lci2=with(d,1/ss$unit*expdiff2*outcome*((RR_lci-1)/RR_lci))
-  d$e_dth_uci2=with(d,1/ss$unit*expdiff2*outcome*((RR_uci-1)/RR_uci))
+  #시나리오 2: 초과 사망자수 산출
+  d$e_dth2    =with(d,outcome*((RR_s2-1)/RR_s2))
+  d$e_dth_lci2=with(d,outcome*((RR_lci_s2-1)/RR_lci_s2))
+  d$e_dth_uci2=with(d,outcome*((RR_uci_s2-1)/RR_uci_s2))
   
   d2<-d %>% group_by(sido_KN,year) %>% summarise(e_dth=sum(e_dth,na.rm=T),
-                                            e_dth_lci =sum(e_dth_lci,na.rm=T),
-                                            e_dth_uci =sum(e_dth_uci,na.rm=T),
-                                            e_dth2    =sum(e_dth2,na.rm=T),
-                                            e_dth_lci2=sum(e_dth_lci2,na.rm=T),
-                                            e_dth_uci2=sum(e_dth_uci2,na.rm=T)) %>%
+                                                 e_dth_lci =sum(e_dth_lci,na.rm=T),
+                                                 e_dth_uci =sum(e_dth_uci,na.rm=T),
+                                                 e_dth2    =sum(e_dth2,na.rm=T),
+                                                 e_dth_lci2=sum(e_dth_lci2,na.rm=T),
+                                                 e_dth_uci2=sum(e_dth_uci2,na.rm=T)) %>%
     
     mutate(outcome=Y,exposure=X,lag=paste0("lag0",i-1))
   
@@ -192,7 +206,7 @@ tb7<-gamm4_excess_func("all_cause","O3",raw$o3_m7_diff,raw$o3_m7,8,raw$TOT)
 tb_o3<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
 tb_tot_ap<-rbind(tb_pm25,tb_pm10,tb_so2,tb_no2,tb_co,tb_o3)
-write.csv(tb_tot_ap,file="gamm4_tot_AP.csv"  ,row.names=F,na="")
+write.csv(tb_tot_ap,file="gamm4_tot_AP.csv"  ,row.names=F,na="",fileEncoding = "euc-kr")
 #----------------------------------------------------------------------------------------#
 #----------------------------------------------------------------------------------------#
 
@@ -263,7 +277,7 @@ tb7<-gamm4_excess_func("nonacc","O3",raw$o3_m7_diff,raw$o3_m7,8,raw$NON_ACC)
 tb_o3<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
 tb_nonacc_ap<-rbind(tb_pm25,tb_pm10,tb_so2,tb_no2,tb_co,tb_o3)
-write.csv(tb_nonacc_ap,file="gamm4_nonacc_AP.csv"  ,row.names=F,na="")
+write.csv(tb_nonacc_ap,file="gamm4_nonacc_AP.csv"  ,row.names=F,na="",fileEncoding = "euc-kr")
 
 #----------------------------------------------------------------------------------------#
 #----------------------------------------------------------------------------------------#
@@ -335,7 +349,7 @@ tb7<-gamm4_excess_func("cvd","O3",raw$o3_m7_diff,raw$o3_m7,8,raw$CVD)
 tb_o3<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
 tb_cvd_ap<-rbind(tb_pm25,tb_pm10,tb_so2,tb_no2,tb_co,tb_o3)
-write.csv(tb_cvd_ap,file="gamm4_cvd_AP.csv"  ,row.names=F,na="")
+write.csv(tb_cvd_ap,file="gamm4_cvd_AP.csv"  ,row.names=F,na="",fileEncoding = "euc-kr")
 
 #----------------------------------------------------------------------------------------#
 #----------------------------------------------------------------------------------------#
@@ -407,6 +421,48 @@ tb7<-gamm4_excess_func("respiratory","O3",raw$o3_m7_diff,raw$o3_m7,8,raw$RESP)
 tb_o3<-rbind(tb0,tb1,tb2,tb3,tb4,tb5,tb6,tb7)
 
 tb_respiratory_ap<-rbind(tb_pm25,tb_pm10,tb_so2,tb_no2,tb_co,tb_o3)
-write.csv(tb_respiratory_ap,file="gamm4_respiratory_AP.csv"  ,row.names=F,na="")
+write.csv(tb_respiratory_ap,file="gamm4_respiratory_AP.csv"  ,row.names=F,na="",fileEncoding = "euc-kr")
 
+tot_year<-tb_tot_ap %>% group_by(exposure,lag,year) %>% summarise(dth    =sum(e_dth),
+                                                        dth_lci=sum(e_dth_lci),
+                                                        dth_uci=sum(e_dth_uci),
+                                                        dth2    =sum(e_dth2),
+                                                        dth_lci2=sum(e_dth_lci2),
+                                                        dth_uci2=sum(e_dth_uci2))
+
+nonacc_year<-tb_nonacc_ap %>% group_by(exposure,lag,year) %>% summarise(dth    =sum(e_dth),
+                                                                  dth_lci=sum(e_dth_lci),
+                                                                  dth_uci=sum(e_dth_uci),
+                                                                  dth2    =sum(e_dth2),
+                                                                  dth_lci2=sum(e_dth_lci2),
+                                                                  dth_uci2=sum(e_dth_uci2))
+cvd_year<-tb_cvd_ap %>% group_by(exposure,lag,year) %>% summarise(dth    =sum(e_dth),
+                                                                  dth_lci=sum(e_dth_lci),
+                                                                  dth_uci=sum(e_dth_uci),
+                                                                  dth2    =sum(e_dth2),
+                                                                  dth_lci2=sum(e_dth_lci2),
+                                                                  dth_uci2=sum(e_dth_uci2))
+
+resp_year<-tb_respiratory_ap %>% group_by(exposure,lag,year) %>% summarise(dth    =sum(e_dth),
+                                                                  dth_lci=sum(e_dth_lci),
+                                                                  dth_uci=sum(e_dth_uci),
+                                                                  dth2    =sum(e_dth2),
+                                                                  dth_lci2=sum(e_dth_lci2),
+                                                                  dth_uci2=sum(e_dth_uci2))
+
+
+tot_year$exposure=factor(tot_year$exposure,levels=c("PM25","PM10","SO2","NO2","CO"))
+nonacc_year$exposure=factor(nonacc_year$exposure,levels=c("PM25","PM10","SO2","NO2","CO"))
+cvd_year$exposure=factor(cvd_year$exposure,levels=c("PM25","PM10","SO2","NO2","CO"))
+resp_year$exposure=factor(resp_year$exposure,levels=c("PM25","PM10","SO2","NO2","CO"))
+
+tot_year<-tot_year %>% arrange(exposure)
+nonacc_year<-nonacc_year %>% arrange(exposure)
+cvd_year<-cvd_year %>% arrange(exposure)
+resp_year<-resp_year %>% arrange(exposure)
+
+write.csv(tot_year   ,file="tot_year.csv"   ,row.names=F,na="",fileEncoding = "euc-kr")
+write.csv(nonacc_year,file="nonacc_year.csv",row.names=F,na="",fileEncoding = "euc-kr")
+write.csv(cvd_year   ,file="cvd_year.csv"   ,row.names=F,na="",fileEncoding = "euc-kr")
+write.csv(resp_year  ,file="resp_year.csv"  ,row.names=F,na="",fileEncoding = "euc-kr")
 
