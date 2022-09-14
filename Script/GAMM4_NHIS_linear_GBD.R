@@ -215,44 +215,50 @@ dat$pm10_m5_diff=with(dat,ifelse(pm10_m5-45>0,pm10_m5-45,0))
 dat$pm10_m6_diff=with(dat,ifelse(pm10_m6-45>0,pm10_m6-45,0))
 dat$pm10_m7_diff=with(dat,ifelse(pm10_m7-45>0,pm10_m7-45,0))
 
-gamm4_result<-read_excel("KEI_SNU_TS_analysis_OJM_20220608.xlsx",sheet="공단질환_선형결과(gamm4)")
+gamm4_result<-read_excel("KEI_SNU_TS_analysis_OJM_20220805.xlsx",sheet="공단질환_선형결과(gamm4)")
 
+dat$area=factor(dat$area,levels=unique(dat$area))
 gamm4_excess_func<-function(Y,X,expdiff,exposure,i,outcome){
   d<-dat
-  d$expdiff=expdiff  #delta exposure (노출 변화량)
-  d$exposue=exposure #노출변수 (대기오염)
-  d$outcome=outcome  #결과변수 (사망자수, 입원자수)
+  d$expdiff =expdiff  #delta exposure (노출 변화량)
+  d$exposure=exposure #노출변수 (대기오염)
+  d$outcome =outcome  #결과변수 (사망자수, 입원자수)
   
   #기준농도-최저농도  (delta exposure)
-  d$expdiff2=with(d,exposure-min(exposure,na.rm=T))
+  d$expdiff2=with(d,exposure-0)
   
   #원시자료에서 보고자하는 노출시점(lag01이면 lag01노출에 대한)
   #노출 값 존재하는 경우에 대해서만 산출
   #추정한 RR 값 
   ss<-subset(gamm4_result, outcome==Y & exposure==X)[i,]
-  RR    <-ss$RR
-  RR_lci<-ss$RR_lci
-  RR_uci<-ss$RR_uci
+  
+  d$RR_s1    =exp(d$expdiff* ss$Estimate)
+  d$RR_lci_s1=exp(d$expdiff*(ss$Estimate-1.96*ss$SE))
+  d$RR_uci_s1=exp(d$expdiff*(ss$Estimate+1.96*ss$SE))
+  
+  d$RR_s2    =exp(d$expdiff2* ss$Estimate)
+  d$RR_lci_s2=exp(d$expdiff2*(ss$Estimate-1.96*ss$SE))
+  d$RR_uci_s2=exp(d$expdiff2*(ss$Estimate+1.96*ss$SE))
   
   #Attributable risk % (RR-1)/RR  ;  1-1/RR
   #AR% = (RR-1) / RR x 100. AR% is also known as “Attributable Fraction (Exposed)”
   
-  #시나리오 1: 농도차이(고농도만 관심)*관심질환(사망자 수)*Attributable risk
-  d$e_dth    =with(d,1/ss$unit*expdiff*outcome*((RR-1)/RR))
-  d$e_dth_lci=with(d,1/ss$unit*expdiff*outcome*((RR_lci-1)/RR_lci))
-  d$e_dth_uci=with(d,1/ss$unit*expdiff*outcome*((RR_uci-1)/RR_uci))
+  #시나리오 1: 초과 질환자 산출
+  d$e_dth    =with(d,outcome*((RR_s1-1)/RR_s1))
+  d$e_dth_lci=with(d,outcome*((RR_lci_s1-1)/RR_lci_s1))
+  d$e_dth_uci=with(d,outcome*((RR_uci_s1-1)/RR_uci_s1))
   
-  #시나리오 2: 농도차이(모든 농도고려)*관심질환(사망자 수)*Attributable risk
-  d$e_dth2    =with(d,1/ss$unit*expdiff2*outcome*((RR-1)/RR))
-  d$e_dth_lci2=with(d,1/ss$unit*expdiff2*outcome*((RR_lci-1)/RR_lci))
-  d$e_dth_uci2=with(d,1/ss$unit*expdiff2*outcome*((RR_uci-1)/RR_uci))
+  #시나리오 2: 초과 질환자수 산출
+  d$e_dth2    =with(d,outcome*((RR_s2-1)/RR_s2))
+  d$e_dth_lci2=with(d,outcome*((RR_lci_s2-1)/RR_lci_s2))
+  d$e_dth_uci2=with(d,outcome*((RR_uci_s2-1)/RR_uci_s2))
   
   d2<-d %>% group_by(area,year) %>% summarise(e_dth=sum(e_dth,na.rm=T),
-                                              e_dth_lci =sum(e_dth_lci,na.rm=T),
-                                              e_dth_uci =sum(e_dth_uci,na.rm=T),
-                                              e_dth2    =sum(e_dth2,na.rm=T),
-                                              e_dth_lci2=sum(e_dth_lci2,na.rm=T),
-                                              e_dth_uci2=sum(e_dth_uci2,na.rm=T)) %>%
+                                                 e_dth_lci =sum(e_dth_lci,na.rm=T),
+                                                 e_dth_uci =sum(e_dth_uci,na.rm=T),
+                                                 e_dth2    =sum(e_dth2,na.rm=T),
+                                                 e_dth_lci2=sum(e_dth_lci2,na.rm=T),
+                                                 e_dth_uci2=sum(e_dth_uci2,na.rm=T)) %>%
     
     mutate(outcome=Y,exposure=X,lag=paste0("lag0",i-1))
   
@@ -877,7 +883,6 @@ z<-cbind(aggregate(isch02_tot~year,data=dat,sum),
          "0203"=aggregate(isch0203_tot~year,data=dat,sum)[,2])
 
 write.csv(z,file="z.csv",row.names=F,na="",fileEncoding = "euc-kr")
-
 
 aggregate(olfa03_tot~year,data=dat,sum)
 aggregate(om02_tot~year,data=dat,sum)
